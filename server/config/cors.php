@@ -1,5 +1,16 @@
 <?php
 
+$frontendOrigins = array_filter(
+    array_map('trim', explode(',', (string) env('FRONTEND_URLS', '')))
+);
+
+$defaultOrigins = [
+    env('FRONTEND_URL', 'http://localhost:5173'),
+    'http://127.0.0.1:5173',
+    'http://localhost:4173',
+    'http://127.0.0.1:4173',
+];
+
 return [
 
     /*
@@ -19,11 +30,17 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
+    'allowed_origins' => array_values(
+        array_unique(
+            array_filter(
+                array_merge($defaultOrigins, $frontendOrigins)
+            )
+        )
+    ),
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => ['*', 'Authorization'],
 
     'exposed_headers' => [],
 

@@ -2,14 +2,19 @@
 
 namespace Illuminate\Routing;
 
+use Closure;
 use Illuminate\Contracts\Routing\ResponseFactory as FactoryContract;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Exceptions\StreamedResponseException;
+use Illuminate\Support\Js;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class ResponseFactory implements FactoryContract
 {
@@ -115,9 +120,50 @@ class ResponseFactory implements FactoryContract
     }
 
     /**
-     * Create a new streamed response instance.
+     * Create a new event stream response.
      *
      * @param  \Closure  $callback
+     * @param  array  $headers
+     * @param  string  $endStreamWith
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function eventStream(Closure $callback, array $headers = [], string $endStreamWith = '</stream>')
+    {
+        return $this->stream(function () use ($callback, $endStreamWith) {
+            foreach ($callback() as $message) {
+                if (connection_aborted()) {
+                    break;
+                }
+
+                if (! is_string($message) && ! is_numeric($message)) {
+                    $message = Js::encode($message);
+                }
+
+                echo "event: update\n";
+                echo 'data: '.$message;
+                echo "\n\n";
+
+                ob_flush();
+                flush();
+            }
+
+            echo "event: update\n";
+            echo 'data: '.$endStreamWith;
+            echo "\n\n";
+
+            ob_flush();
+            flush();
+        }, 200, array_merge($headers, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]));
+    }
+
+    /**
+     * Create a new streamed response instance.
+     *
+     * @param  callable  $callback
      * @param  int  $status
      * @param  array  $headers
      * @return \Symfony\Component\HttpFoundation\StreamedResponse
@@ -128,17 +174,41 @@ class ResponseFactory implements FactoryContract
     }
 
     /**
+     * Create a new streamed response instance.
+     *
+     * @param  array  $data
+     * @param  int  $status
+     * @param  array  $headers
+     * @param  int  $encodingOptions
+     * @return \Symfony\Component\HttpFoundation\StreamedJsonResponse
+     */
+    public function streamJson($data, $status = 200, $headers = [], $encodingOptions = JsonResponse::DEFAULT_ENCODING_OPTIONS)
+    {
+        return new StreamedJsonResponse($data, $status, $headers, $encodingOptions);
+    }
+
+    /**
      * Create a new streamed response instance as a file download.
      *
-     * @param  \Closure  $callback
+     * @param  callable  $callback
      * @param  string|null  $name
      * @param  array  $headers
      * @param  string|null  $disposition
      * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     *
+     * @throws \Illuminate\Routing\Exceptions\StreamedResponseException
      */
     public function streamDownload($callback, $name = null, array $headers = [], $disposition = 'attachment')
     {
-        $response = new StreamedResponse($callback, 200, $headers);
+        $withWrappedException = function () use ($callback) {
+            try {
+                $callback();
+            } catch (Throwable $e) {
+                throw new StreamedResponseException($e);
+            }
+        };
+
+        $response = new StreamedResponse($withWrappedException, 200, $headers);
 
         if (! is_null($name)) {
             $response->headers->set('Content-Disposition', $response->headers->makeDisposition(
@@ -211,7 +281,7 @@ class ResponseFactory implements FactoryContract
     /**
      * Create a new redirect response to a named route.
      *
-     * @param  string  $route
+     * @param  \BackedEnum|string  $route
      * @param  mixed  $parameters
      * @param  int  $status
      * @param  array  $headers
@@ -225,7 +295,7 @@ class ResponseFactory implements FactoryContract
     /**
      * Create a new redirect response to a controller action.
      *
-     * @param  string  $action
+     * @param  array|string  $action
      * @param  mixed  $parameters
      * @param  int  $status
      * @param  array  $headers
