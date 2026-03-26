@@ -412,6 +412,123 @@ class ApiClient {
     }
   }
 
+  // --- Admin Dashboard Methods ---
+  async getDashboardStats() {
+    try {
+      const response = await this.client.get('/api/admin/dashboard-stats');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return null;
+    }
+  }
+
+  // --- Admin Package Methods ---
+  async getAdminPackages() {
+    try {
+      const response = await this.client.get('/api/tour-packages');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  async createPackage(data: any) {
+    try {
+      const response = await this.client.post('/api/tour-packages', data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
+  async updatePackage(id: number, data: any) {
+    try {
+      const response = await this.client.put(`/api/tour-packages/${id}`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
+  async deletePackage(id: number) {
+    try {
+      const response = await this.client.delete(`/api/tour-packages/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // --- Admin Booking Methods ---
+  async getAdminBookings() {
+    try {
+      const response = await this.client.get('/api/admin/bookings');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  async updateBookingStatus(id: number, status: string) {
+    try {
+      const response = await this.client.put(`/api/admin/bookings/${id}/status`, { status });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
+  // --- Customer/Public Package Methods ---
+  async getPackages() {
+    return this.getAdminPackages();
+  }
+
+  async getPackage(id: number) {
+    try {
+      const response = await this.client.get(`/api/tour-packages/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return null;
+    }
+  }
+
+  // --- Customer Booking Methods ---
+  async getMyBookings() {
+    try {
+      const response = await this.client.get('/api/my-bookings');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  async createBooking(data: { tour_package_id: number; booking_date: string; participants: number }) {
+    try {
+      const response = await this.client.post('/api/bookings', data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
   // Handle common errors
   handleError(error: any) {
     const activeBaseUrl = this.normalizeBaseUrl(
