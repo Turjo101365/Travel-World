@@ -19,14 +19,14 @@ const BookingHistory: React.FC = () => {
   if (loading) return <div className="text-center py-5"><Spinner animation="border" /></div>;
 
   return (
-    <div>
+    <div className="booking-history-page">
       <h3 className="fw-bolder mb-4 text-dark">My Booking History</h3>
       {bookings.length === 0 ? (
-        <Alert variant="info" className="rounded-3 border-0 py-4 px-4 shadow-sm bg-light text-secondary">
+        <Alert variant="info" className="booking-history-alert rounded-3 border-0 py-4 px-4 shadow-sm bg-light text-secondary">
           <i className="bi bi-info-circle me-2 fs-5"></i> You haven't made any bookings yet. Start exploring our amazing tour packages today!
         </Alert>
       ) : (
-        <div className="table-responsive bg-white rounded-3">
+        <div className="booking-history-table-wrap table-responsive bg-white rounded-3">
           <Table hover className="align-middle border">
             <thead className="table-light text-muted">
               <tr>

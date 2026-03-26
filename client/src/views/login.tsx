@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import axios from 'axios';
 import '../css/login.css';
 import ApiClient from '../api';
-import { secrets } from '../secrets';
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,6 +18,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -57,17 +56,21 @@ const Login: React.FC = () => {
     if (validate()) {
       setLoading(true);
       try {
-        const endpoint = `${secrets.backendEndpoint.replace(/\/+$/, '')}/api/login`;
-        const response = await axios.post(endpoint, {
-          email: formData.email.trim(),
-          password: formData.password,
-        });
+        const api = new ApiClient();
+        const data = await api.login(formData.email.trim(), formData.password);
 
-        const data = response.data;
         if (data?.status === 'success' && data?.authorisation?.token) {
-          ApiClient.setToken(data.authorisation.token);
-          ApiClient.setUser(data.user);
-          navigate('/profile', { replace: true });
+          const role = data.user?.role;
+          const redirectState = location.state as
+            | { returnUrl?: string; from?: { pathname?: string } }
+            | undefined;
+
+          const redirectTarget =
+            role === 'admin'
+              ? '/admin'
+              : redirectState?.returnUrl || redirectState?.from?.pathname || '/profile';
+
+          navigate(redirectTarget, { replace: true });
           return;
         }
         setError(data?.message || 'Login failed. Please try again.');
@@ -81,7 +84,8 @@ const Login: React.FC = () => {
         } else {
           setError(
             err?.response?.data?.message ||
-              `Cannot connect to server at ${secrets.backendEndpoint}. Please try again.`
+              err?.response?.data?.error ||
+              'Cannot connect to the server. Please try again.'
           );
         }
       } finally {

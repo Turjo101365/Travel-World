@@ -43,6 +43,13 @@ const scaleIn = {
 const Home: React.FC = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [siteTheme, setSiteTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof document === 'undefined') {
+      return 'light';
+    }
+
+    return document.documentElement.dataset.siteTheme === 'dark' ? 'dark' : 'light';
+  });
 
   // Gallery images
   const galleryImages = [
@@ -190,8 +197,28 @@ const Home: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const root = document.documentElement;
+    const syncTheme = () => {
+      setSiteTheme(root.dataset.siteTheme === 'dark' ? 'dark' : 'light');
+    };
+
+    syncTheme();
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['data-site-theme'] });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const isLightTheme = siteTheme === 'light';
+
   return (
-    <div className="home-page">
+    <div className={`home-page ${isLightTheme ? 'home-page-light-variant' : ''}`}>
 
       <main>
         {/* Hero Section */}
@@ -201,44 +228,141 @@ const Home: React.FC = () => {
             style={{ transform: `translateY(${scrollY * 0.3}px)` }}
           ></div>
           <div className="hero-overlay"></div>
-          <motion.div
-            className="hero-content"
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-          >
+          {isLightTheme ? (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              className="hero-light-shell"
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
             >
-              <span className="tagline">Know Before You Go 🌍</span>
+              <motion.div
+                className="hero-light-topline"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <span className="tagline">Know Before You Go 🌍</span>
+                <span className="hero-trust-pill">5,000+ happy travelers</span>
+              </motion.div>
+
+              <div className="hero-light-layout">
+                <motion.div
+                  className="hero-light-story"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                >
+                  <h1 id="hero-heading">
+                    Traveling opens the door to creating <span>memories</span>
+                  </h1>
+                  <p className="hero-light-lead">
+                    Discover destinations. Create memories. Travel smart with TravelWorld.
+                  </p>
+                  <div className="hero-light-actions">
+                    <Link to="/tourguide" className="btn-primary">Find a Guide</Link>
+                    <a className="btn-secondary" href="#services">Our Services</a>
+                  </div>
+                  <div className="hero-light-stats">
+                    <div className="hero-light-stat">
+                      <strong>300+</strong>
+                      <span>Expert guides</span>
+                    </div>
+                    <div className="hero-light-stat">
+                      <strong>50+</strong>
+                      <span>Destinations</span>
+                    </div>
+                    <div className="hero-light-stat">
+                      <strong>24/7</strong>
+                      <span>Trip support</span>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              <motion.div
+                className="hero-light-benefits"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+              >
+                <div className="hero-light-benefit-card">
+                  <span className="hero-light-benefit-icon">🧭</span>
+                  <span>Handpicked local guides</span>
+                </div>
+                <div className="hero-light-benefit-card">
+                  <span className="hero-light-benefit-icon">✨</span>
+                  <span>Personalized travel planning</span>
+                </div>
+                <div className="hero-light-benefit-card">
+                  <span className="hero-light-benefit-icon">🔒</span>
+                  <span>Safe and simple booking</span>
+                </div>
+              </motion.div>
             </motion.div>
-            <motion.h1 
-              id="hero-heading"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
+          ) : (
+            <motion.div
+              className="hero-content hero-content-single"
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
             >
-              Traveling opens the door to creating <span>memories</span>
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              Discover destinations. Create memories. Travel smart with TravelWorld.
-            </motion.p>
-            <motion.div 
-              className="hero-cta"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-            >
-              <Link to="/tourguide" className="btn-primary">Find a Guide</Link>
-              <a className="btn-secondary" href="#services">Our Services</a>
+              <div className="hero-copy">
+                <motion.div
+                  className="hero-badge-row"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <span className="tagline">Know Before You Go 🌍</span>
+                  <span className="hero-trust-pill">5,000+ happy travelers</span>
+                </motion.div>
+                <motion.h1 
+                  id="hero-heading"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                >
+                  Traveling opens the door to creating <span>memories</span>
+                </motion.h1>
+                <motion.p
+                  className="hero-lead"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                >
+                  Discover destinations. Create memories. Travel smart with TravelWorld.
+                </motion.p>
+                <motion.div 
+                  className="hero-cta"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.5 }}
+                >
+                  <Link to="/tourguide" className="btn-primary">Find a Guide</Link>
+                  <a className="btn-secondary" href="#services">Our Services</a>
+                </motion.div>
+                <motion.div
+                  className="hero-highlights"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                >
+                  <div className="hero-highlight-item">
+                    <span className="hero-highlight-icon">🧭</span>
+                    <span>Handpicked local guides</span>
+                  </div>
+                  <div className="hero-highlight-item">
+                    <span className="hero-highlight-icon">✨</span>
+                    <span>Personalized travel planning</span>
+                  </div>
+                  <div className="hero-highlight-item">
+                    <span className="hero-highlight-icon">🔒</span>
+                    <span>Safe and simple booking</span>
+                  </div>
+                </motion.div>
+              </div>
             </motion.div>
-          </motion.div>
+          )}
         </section>
 
         {/* Experience New Adventures Section */}

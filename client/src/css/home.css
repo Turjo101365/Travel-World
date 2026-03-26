@@ -331,9 +331,21 @@ body {
 .hero-content {
   position: relative;
   z-index: 2;
-  max-width: 800px;
-  padding-top: 80px;
-  text-align: center;
+  max-width: 1200px;
+  width: min(1200px, 100%);
+  padding: 100px 0 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 2rem;
+  align-items: center;
+}
+
+.hero-content-single {
+  max-width: 860px;
+  grid-template-columns: 1fr;
+  gap: 0;
+  justify-items: center;
+  margin: 0 auto;
 }
 
 .tagline {
@@ -348,6 +360,41 @@ body {
   color: var(--accent);
   font-size: 0.95rem;
   letter-spacing: 1px;
+}
+
+.hero-copy {
+  text-align: left;
+}
+
+.hero-content-single .hero-copy {
+  text-align: center;
+}
+
+.hero-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.hero-content-single .hero-badge-row,
+.hero-content-single .hero-cta,
+.hero-content-single .hero-highlights {
+  justify-content: center;
+}
+
+.hero-trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text-light);
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .hero h1 {
@@ -375,11 +422,14 @@ body {
   border-radius: 2px;
 }
 
-.hero p {
+.hero-lead {
   font-size: 1.25rem;
   color: rgba(255, 255, 255, 0.85);
   margin-bottom: 2.5rem;
   max-width: 600px;
+}
+
+.hero-content-single .hero-lead {
   margin-left: auto;
   margin-right: auto;
 }
@@ -387,8 +437,348 @@ body {
 .hero-cta {
   display: flex;
   gap: 1rem;
-  justify-content: center;
   flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.hero-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.hero-highlight-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-light);
+  font-size: 0.95rem;
+  font-weight: 500;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hero-highlight-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 167, 38, 0.18);
+  font-size: 1rem;
+}
+
+.hero-panel {
+  background: rgba(8, 24, 46, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 30px;
+  padding: 1.75rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  color: var(--text-white);
+}
+
+.hero-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.hero-panel-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hero-panel-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 167, 38, 0.18);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.hero-destination-card {
+  padding: 1.25rem;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  margin-bottom: 1.25rem;
+}
+
+.hero-destination-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.hero-destination-card h3 {
+  font-size: 1.35rem;
+  line-height: 1.35;
+  margin-bottom: 0.75rem;
+  color: var(--text-white);
+}
+
+.hero-destination-card p {
+  margin: 0;
+  color: rgba(232, 244, 248, 0.78);
+  line-height: 1.65;
+}
+
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.hero-stat-card {
+  padding: 1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.hero-stat-card strong {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.hero-stat-card span {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.home-page-light-variant .hero-light-shell {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  width: min(1200px, 100%);
+  padding: 90px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.home-page-light-variant .hero-light-topline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+  justify-content: center;
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.home-page-light-variant .hero-light-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.home-page-light-variant .hero-light-story,
+.home-page-light-variant .hero-light-spotlight {
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.home-page-light-variant .hero-light-story {
+  padding: 2rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 250, 255, 0.85));
+  box-shadow: 0 24px 60px rgba(32, 49, 74, 0.12);
+  text-align: center;
+}
+
+.home-page-light-variant .hero-light-story h1 {
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  font-weight: 800;
+  line-height: 1.08;
+  margin: 0 auto 1.1rem;
+  color: var(--text-white);
+  max-width: 10ch;
+}
+
+.home-page-light-variant .hero-light-story h1 span {
+  color: var(--accent-dark);
+}
+
+.home-page-light-variant .hero-light-story h1 span::after {
+  display: none;
+}
+
+.home-page-light-variant .hero-light-lead {
+  font-size: 1.15rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+  max-width: 40rem;
+  margin: 0 auto 1.6rem;
+}
+
+.home-page-light-variant .hero-light-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.home-page-light-variant .hero-light-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.home-page-light-variant .hero-light-stat {
+  padding: 1rem 1.1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(119, 138, 160, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: center;
+  text-align: center;
+}
+
+.home-page-light-variant .hero-light-stat strong {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--accent-dark);
+}
+
+.home-page-light-variant .hero-light-stat span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.home-page-light-variant .hero-light-spotlight {
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.96), rgba(241, 248, 255, 0.88));
+  box-shadow: 0 24px 60px rgba(32, 49, 74, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.home-page-light-variant .hero-light-spotlight-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.home-page-light-variant .hero-light-panel-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.home-page-light-variant .hero-light-panel-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 154, 61, 0.14);
+  color: var(--accent-dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.home-page-light-variant .hero-light-destination {
+  padding: 1.35rem;
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 251, 255, 0.85));
+  border: 1px solid rgba(119, 138, 160, 0.16);
+  min-height: 100%;
+}
+
+.home-page-light-variant .hero-light-destination-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.home-page-light-variant .hero-light-destination h3 {
+  font-size: 1.4rem;
+  line-height: 1.35;
+  margin-bottom: 0.85rem;
+  color: var(--text-white);
+}
+
+.home-page-light-variant .hero-light-destination p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.home-page-light-variant .hero-light-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.home-page-light-variant .hero-light-benefit-card {
+  padding: 1.2rem 1.1rem;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 250, 255, 0.84));
+  border: 1px solid rgba(119, 138, 160, 0.16);
+  box-shadow: 0 18px 44px rgba(32, 49, 74, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  color: var(--text-white);
+  min-height: 100%;
+}
+
+.home-page-light-variant .hero-light-benefit-card span:last-child {
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.home-page-light-variant .hero-light-benefit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: rgba(255, 154, 61, 0.14);
+  font-size: 1.15rem;
 }
 
 /* ========== EXPERIENCE / ADVENTURES SECTION ========== */
@@ -1146,6 +1536,24 @@ padding: 120px 5% var(--section-padding);
 
 /* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 992px) {
+  .home-page-light-variant .hero-light-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .home-page-light-variant .hero-light-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding-top: 90px;
+  }
+
+  .hero-panel {
+    max-width: 720px;
+  }
+
   .adventures-container {
     grid-template-columns: 1fr;
     gap: 3rem;
@@ -1167,17 +1575,85 @@ padding: 120px 5% var(--section-padding);
 }
 
 @media (max-width: 768px) {
+  .hero {
+    padding-top: 90px;
+  }
+
+  .home-page-light-variant .hero-light-shell {
+    padding-top: 46px;
+  }
+
+  .home-page-light-variant .hero-light-topline,
+  .home-page-light-variant .hero-light-actions {
+    justify-content: center;
+  }
+
+  .home-page-light-variant .hero-light-story {
+    padding: 1.35rem;
+    border-radius: 24px;
+  }
+
+  .home-page-light-variant .hero-light-story,
+  .home-page-light-variant .hero-light-benefit-card {
+    text-align: center;
+  }
+
+  .home-page-light-variant .hero-light-story h1,
+  .home-page-light-variant .hero-light-lead {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .home-page-light-variant .hero-light-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-content {
+    padding-top: 40px;
+  }
+
+  .hero-copy {
+    text-align: center;
+  }
+
+  .hero-badge-row,
+  .hero-cta,
+  .hero-highlights {
+    justify-content: center;
+  }
+
   .hero h1 {
     font-size: 2.2rem;
   }
   
-  .hero p {
+  .hero-lead {
     font-size: 1.1rem;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   .hero-cta {
     flex-direction: column;
     align-items: center;
+  }
+
+  .hero-highlights {
+    gap: 0.75rem;
+  }
+
+  .hero-highlight-item {
+    width: min(100%, 340px);
+    justify-content: center;
+  }
+
+  .hero-panel {
+    padding: 1.35rem;
+  }
+
+  .hero-panel-header,
+  .hero-destination-meta {
+    justify-content: center;
+    text-align: center;
   }
   
   .btn-primary,
@@ -1241,17 +1717,40 @@ padding: 120px 5% var(--section-padding);
 }
 
 @media (max-width: 480px) {
+  .home-page-light-variant .hero-light-story h1 {
+    font-size: 2rem;
+    max-width: none;
+  }
+
+  .home-page-light-variant .hero-light-lead {
+    font-size: 1rem;
+  }
+
   .hero h1 {
     font-size: 1.9rem;
   }
   
-  .hero p {
+  .hero-lead {
     font-size: 1rem;
   }
   
   .tagline {
     font-size: 0.85rem;
     padding: 0.4rem 0.8rem;
+  }
+
+  .hero-panel {
+    border-radius: 24px;
+    padding: 1.1rem;
+  }
+
+  .hero-destination-card {
+    padding: 1rem;
+    border-radius: 20px;
+  }
+
+  .hero-stats-grid {
+    grid-template-columns: 1fr;
   }
   
   .adventures-image img {

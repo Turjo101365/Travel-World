@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Spinner, Container } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import ApiClient from '../api';
+import ApiClient, { TourPackageRecord } from '../api';
 
 const Packages: React.FC = () => {
-  const [packages, setPackages] = useState<any[]>([]);
+  const [packages, setPackages] = useState<TourPackageRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -19,8 +19,9 @@ const Packages: React.FC = () => {
   }, []);
 
   return (
-    <Container className="py-5">
-      <h2 className="text-center mb-5 fw-bold mt-4">Explore Our Amazing Tours</h2>
+    <div className="packages-page">
+      <Container className="packages-shell py-5">
+        <h2 className="packages-heading text-center mb-5 fw-bold mt-4">Explore Our Amazing Tours</h2>
       {loading ? <div className="text-center py-5"><Spinner animation="border" /></div> : (
         <Row className="g-4 mb-5">
           {packages.length === 0 && <p className="text-center text-muted fs-5">No tour packages available.</p>}
@@ -54,7 +55,8 @@ const Packages: React.FC = () => {
           ))}
         </Row>
       )}
-    </Container>
+      </Container>
+    </div>
   );
 };
 
