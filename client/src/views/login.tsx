@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import '../css/login.css';
+import ApiClient from '../api';
+import { secrets } from '../secrets';
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -34,13 +37,13 @@ const Login: React.FC = () => {
     const newErrors: typeof errors = {};
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Email or Username is required';
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email.trim())) {
+      newErrors.email = 'Please enter a valid email';
     }
     
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
     }
     
     setErrors(newErrors);
@@ -54,25 +57,33 @@ const Login: React.FC = () => {
     if (validate()) {
       setLoading(true);
       try {
-        const response = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            email: formData.email,
-            password: formData.password,
-            remember: formData.rememberMe
-          }),
+        const endpoint = `${secrets.backendEndpoint.replace(/\/+$/, '')}/api/login`;
+        const response = await axios.post(endpoint, {
+          email: formData.email.trim(),
+          password: formData.password,
         });
 
-        if (response.ok) {
-          // Login successful - redirect to home or dashboard
-          navigate('/');
-        } else {
-          const data = await response.json();
-          setError(data.message || 'Invalid credentials. Please try again.');
+        const data = response.data;
+        if (data?.status === 'success' && data?.authorisation?.token) {
+          ApiClient.setToken(data.authorisation.token);
+          ApiClient.setUser(data.user);
+          navigate('/profile', { replace: true });
+          return;
         }
-      } catch (err) {
-        setError('Network error! Please try again.');
+        setError(data?.message || 'Login failed. Please try again.');
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          setError('Invalid credentials. Please try again.');
+        } else if (err?.response?.status === 422) {
+          const validationErrors = err?.response?.data?.errors as Record<string, string[]> | undefined;
+          const firstError = validationErrors ? Object.values(validationErrors)[0]?.[0] : null;
+          setError(firstError || err?.response?.data?.message || 'Please check your input.');
+        } else {
+          setError(
+            err?.response?.data?.message ||
+              `Cannot connect to server at ${secrets.backendEndpoint}. Please try again.`
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -138,7 +149,7 @@ const Login: React.FC = () => {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="login-form">
-            {/* Email/Username Field */}
+            {/* Email Field */}
             <motion.div 
               className={`form-group ${errors.email ? 'has-error' : ''}`}
               initial={{ opacity: 0, x: -20 }}
@@ -148,16 +159,16 @@ const Login: React.FC = () => {
               <div className="input-wrapper">
                 <span className="input-icon">📧</span>
                 <input
-                  type="text"
+                  type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Email or Username"
+                  placeholder="Email Address"
                   className={errors.email ? 'error' : ''}
                   id="login-email"
                   autoComplete="email"
                 />
-                <label htmlFor="login-email">Email or Username</label>
+                <label htmlFor="login-email">Email Address</label>
               </div>
               {errors.email && (
                 <motion.small 
@@ -253,31 +264,6 @@ const Login: React.FC = () => {
             </motion.button>
           </form>
 
-          {/* Divider */}
-          <motion.div 
-            className="login-divider"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-          >
-            <span>or</span>
-          </motion.div>
-
-          {/* Social Login */}
-          <motion.div 
-            className="social-login"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.75 }}
-          >
-            <button type="button" className="social-btn google">
-              <span>G</span> Google
-            </button>
-            <button type="button" className="social-btn facebook">
-              <span>f</span> Facebook
-            </button>
-          </motion.div>
-
           {/* Footer Links */}
           <motion.div 
             className="login-footer"
@@ -297,4 +283,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-

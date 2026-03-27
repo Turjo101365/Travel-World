@@ -45,6 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
     { name: 'About Us', path: '/about', className: 'about-link' },
     { name: 'Tour Guide', path: '/tourguide', className: 'tour-link' },
     { name: 'Contact', path: '/contact', className: 'contact-link' },
+    { name: 'Admin Dashboard', path: '/admin', className: 'admin-link' },
   ];
 
   const navbarClass = `modern-navbar ${scrolled ? 'scrolled' : ''} ${theme === 'about' ? 'theme-about' : ''} ${theme === 'dark' ? 'theme-dark' : ''}`;

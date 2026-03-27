@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import ApiClient from "../api";
+import { secrets } from "../secrets";
 import "../css/forgot-password.css";
 
 const ForgotPassword: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [validationMsg, setValidationMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,22 +24,26 @@ const ForgotPassword: React.FC = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
-      // Replace with your API endpoint
-      const response = await fetch("/api/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const api = new ApiClient();
+      const data = await api.requestPasswordResetCode(email.trim());
 
-      const data = await response.json();
-      if (response.ok) {
-        setSuccessMsg(data.message || "Reset link sent to your email!");
+      setSuccessMsg(data?.message || "Reset code sent to your email address.");
+      navigate(`/reset-password?email=${encodeURIComponent(email.trim())}`);
+    } catch (err: any) {
+      if (err?.response?.status === 422 && err?.response?.data?.errors) {
+        const errors = err.response.data.errors as Record<string, string[]>;
+        const firstError = Object.values(errors)[0]?.[0];
+        setErrorMsg(firstError || "Please check your email address.");
       } else {
-        setErrorMsg(data.message || "Something went wrong.");
+        setErrorMsg(
+          err?.response?.data?.message ||
+            `Cannot connect to backend at ${secrets.backendEndpoint}. Start backend server and try again.`
+        );
       }
-    } catch (err) {
-      setErrorMsg("Network error, please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -106,7 +114,7 @@ const ForgotPassword: React.FC = () => {
             transition={{ delay: 0.2 }}
           >
             <h2>Forgot <span>Password?</span></h2>
-            <p className="subtitle">Enter your email to receive a reset link</p>
+            <p className="subtitle">Enter your email to receive a reset code in your inbox</p>
           </motion.div>
 
           {successMsg && <motion.div 
@@ -145,14 +153,30 @@ const ForgotPassword: React.FC = () => {
             <motion.button 
               type="submit" 
               className="btn-login"
+              disabled={submitting}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              Send Reset Link
+              {submitting ? "Sending..." : "Get Reset Code"}
             </motion.button>
+
+            {successMsg && (
+              <motion.div
+                className="bottom-text"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <p>
+                  Already received the code?{" "}
+                  <Link to={`/reset-password?email=${encodeURIComponent(email.trim())}`}>
+                    Continue to Reset Password
+                  </Link>
+                </p>
+              </motion.div>
+            )}
 
             <motion.div 
               className="bottom-text"
@@ -171,4 +195,3 @@ const ForgotPassword: React.FC = () => {
 };
 
 export default ForgotPassword;
-

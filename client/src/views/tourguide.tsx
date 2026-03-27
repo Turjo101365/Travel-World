@@ -1,19 +1,65 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import '../css/tourguide.css';
+import ApiClient from '../api';
 
 interface Guide {
-  id: number | string;
+  id: number;
   name: string;
   photo: string;
   description: string;
   rating: number;
+  location: string;
+  experience_years: number;
+  languages: string;
+  hire_cost?: number;
+  phone?: string;
+  email?: string;
 }
 
-interface TourGuideProps {
-  guides: Guide[];
-}
+const TourGuide: React.FC = () => {
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const TourGuide: React.FC<TourGuideProps> = ({ guides }) => {
+  const fetchGuides = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const api = new ApiClient();
+      const response = await api.getTourGuides();
+
+      if (response?.status === 'success' && Array.isArray(response?.data)) {
+        setGuides(response.data);
+        return;
+      }
+
+      setGuides([]);
+      setError(response?.message || 'Failed to load tour guides. Please try again.');
+    } catch (err) {
+      console.error('Error fetching tour guides:', err);
+      setGuides([]);
+      setError('Failed to load tour guides. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGuides();
+  }, [fetchGuides]);
+
+  if (loading) {
+    return (
+      <div className="tourguide-page">
+        <div className="tourguide-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <div className="loading-message">Loading tour guides...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="tourguide-page">
       <div className="tourguide-container">
@@ -29,23 +75,49 @@ const TourGuide: React.FC<TourGuideProps> = ({ guides }) => {
         {/* Right side: Tour Guide Cards */}
         <div className="tourguide-right">
           <div className="cards-container">
-            {guides.map((guide) => (
-              <div className="tour-card" key={guide.id}>
-                <img src={guide.photo} alt={guide.name} />
-                <h3>{guide.name}</h3>
-                <p>{guide.description}</p>
-
-                <div className="rating">
-                  {Array.from({ length: guide.rating }).map((_, i) => (
-                    <span key={i}>⭐️</span>
-                  ))}
-                </div>
-
-                <a href={`/guide/${guide.id}`} className="btn-contact">
-                  Details
-                </a>
+            {error ? (
+              <div className="error-state" style={{textAlign: 'center', padding: '4rem 2rem', color: '#dc3545' }}>
+                <h3>Error</h3>
+                <p>{error}</p>
+                <button
+                  type="button"
+                  className="btn-contact"
+                  onClick={fetchGuides}
+                  style={{ marginTop: '1rem', display: 'inline-block' }}
+                >
+                  Retry
+                </button>
               </div>
-            ))}
+            ) : guides.length === 0 ? (
+              <div className="empty-state" style={{textAlign: 'center', padding: '4rem 2rem', color: '#666' }}>
+                <h3>No Tour Guides Available</h3>
+                <p>Populate database with seeder on backend.</p>
+              </div>
+            ) : (
+              guides.map((guide) => (
+                <div className="tour-card" key={guide.id}>
+                  <img 
+                    src={guide.photo || '/images/img.jpg'} 
+                    alt={guide.name}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/img.jpg';
+                    }}
+                  />
+                  <h3>{guide.name}</h3>
+                  <p>{guide.description}</p>
+
+                  <div className="rating">
+                    {Array.from({ length: Math.max(0, Math.min(5, guide.rating || 0)) }).map((_, i) => (
+                      <span key={i}>⭐️</span>
+                    ))}
+                  </div>
+
+                  <Link to={`/guide/${guide.id}`} className="btn-contact">
+                    Guide Details
+                  </Link>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

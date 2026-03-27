@@ -90,7 +90,7 @@ https://www.figma.com/design/xkR6GmohzjaGd7t03VspWV/TravelWorld---Travel-Plannin
 ## Setup Instructions
 1. **Clone the repository:**  
 ```bash
-git clone https://github.com/feroz49/TravelWorld.git
+git clone https://github.com/feroz49/Travel-World.git
 ```
 2. **Install dependencies:**  
 ```bash
