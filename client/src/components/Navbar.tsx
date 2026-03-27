@@ -2,16 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Navbar.css';
+import ApiClient from '../api';
 
 interface NavbarProps {
   theme?: 'default' | 'about' | 'dark';
+  siteTheme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
+const Navbar: React.FC<NavbarProps> = ({ theme = 'default', siteTheme, onToggleTheme }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [clickedLink, setClickedLink] = useState<string | null>(null);
   const location = useLocation();
+  const currentUser = ApiClient.getUser();
+  const isAuthenticated = ApiClient.isAuthenticated();
+  const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,14 +46,37 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
     setClickedLink(linkName);
   };
 
+  const isLinkActive = (path: string) => {
+    if (path === '/admin') {
+      return location.pathname.startsWith('/admin');
+    }
+
+    if (path === '/profile') {
+      return location.pathname === '/profile' || location.pathname.startsWith('/portal');
+    }
+
+    return location.pathname === path;
+  };
+
   const navLinks = [
     { name: 'Home', path: '/', className: 'home-link' },
     { name: 'About Us', path: '/about', className: 'about-link' },
     { name: 'Tour Guide', path: '/tourguide', className: 'tour-link' },
     { name: 'Contact', path: '/contact', className: 'contact-link' },
   ];
+  const authLinks = isAuthenticated
+    ? [
+        ...(isAdmin
+          ? [{ name: 'Admin', label: 'Admin Dashboard', path: '/admin', className: 'admin-btn' }]
+          : []),
+        { name: 'Profile', label: 'Profile', path: '/profile', className: 'profile-btn' },
+      ]
+    : [
+        { name: 'Login', label: 'Login', path: '/login', className: 'login-link' },
+        { name: 'Register', label: 'Register', path: '/signup', className: 'register-btn' },
+      ];
 
-  const navbarClass = `modern-navbar ${scrolled ? 'scrolled' : ''} ${theme === 'about' ? 'theme-about' : ''} ${theme === 'dark' ? 'theme-dark' : ''}`;
+  const navbarClass = `modern-navbar ${scrolled ? 'scrolled' : ''} ${theme === 'about' ? 'theme-about' : ''} ${theme === 'dark' ? 'theme-dark' : ''} ${siteTheme === 'dark' ? 'site-theme-dark' : 'site-theme-light'}`;
 
   return (
     <motion.nav
@@ -83,7 +112,7 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
             >
               <Link
                 to={link.path}
-                className={`${link.className} ${location.pathname === link.path ? 'active' : ''} ${clickedLink === link.name ? 'clicked' : ''}`}
+                className={`${link.className} ${isLinkActive(link.path) ? 'active' : ''} ${clickedLink === link.name ? 'clicked' : ''}`}
                 onClick={() => handleLinkClick(link.name)}
               >
                 {link.name}
@@ -91,45 +120,40 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
               </Link>
             </motion.li>
           ))}
+          {authLinks.map((link, index) => (
+            <motion.li
+              key={link.name}
+              className={link.className === 'login-link' ? 'login-link' : undefined}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+            >
+              <Link
+                to={link.path}
+                className={`${link.className} ${isLinkActive(link.path) ? 'active' : ''} ${clickedLink === link.name ? 'clicked' : ''}`}
+                onClick={() => handleLinkClick(link.name)}
+              >
+                {link.className === 'profile-btn' ? '👤 ' : ''}
+                {link.label}
+                {link.className === 'login-link' && <span className="link-underline"></span>}
+              </Link>
+            </motion.li>
+          ))}
           <motion.li
-            className="login-link"
+            className="theme-toggle-item"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
+            transition={{ duration: 0.4, delay: 0.75 }}
           >
-            <Link 
-              to="/login" 
-              className={`login-link ${clickedLink === 'Login' ? 'clicked' : ''}`}
-              onClick={() => handleLinkClick('Login')}
+            <button
+              type="button"
+              className={`theme-toggle-btn ${siteTheme === 'dark' ? 'is-dark' : 'is-light'}`}
+              onClick={onToggleTheme}
+              aria-pressed={siteTheme === 'dark'}
+              aria-label={`Switch to ${siteTheme === 'dark' ? 'light' : 'dark'} mode`}
             >
-              Login
-            </Link>
-          </motion.li>
-          <motion.li
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.6 }}
-          >
-            <Link 
-              to="/signup" 
-              className={`register-btn ${clickedLink === 'Register' ? 'clicked' : ''}`}
-              onClick={() => handleLinkClick('Register')}
-            >
-              Register
-            </Link>
-          </motion.li>
-          <motion.li
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.65 }}
-          >
-            <Link 
-              to="/profile" 
-              className={`profile-btn ${clickedLink === 'Profile' ? 'clicked' : ''}`}
-              onClick={() => handleLinkClick('Profile')}
-            >
-              👤 Profile
-            </Link>
+              {siteTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            </button>
           </motion.li>
         </ul>
 
@@ -167,51 +191,44 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
                 >
                   <Link
                     to={link.path}
-                    className={`${link.className} ${location.pathname === link.path ? 'active' : ''}`}
+                    className={`${link.className} ${isLinkActive(link.path) ? 'active' : ''}`}
                     onClick={() => handleLinkClick(link.name)}
                   >
                     {link.name}
                   </Link>
                 </motion.li>
               ))}
+              {authLinks.map((link, index) => (
+                <motion.li
+                  key={link.name}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                >
+                  <Link
+                    to={link.path}
+                    className={link.className}
+                    onClick={() => handleLinkClick(link.name)}
+                  >
+                    {link.className === 'profile-btn' ? '👤 ' : ''}
+                    {link.label}
+                  </Link>
+                </motion.li>
+              ))}
               <motion.li
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.65 }}
               >
-                <Link 
-                  to="/login" 
-                  className="login-link"
-                  onClick={() => handleLinkClick('Login')}
+                <button
+                  type="button"
+                  className={`theme-toggle-btn mobile ${siteTheme === 'dark' ? 'is-dark' : 'is-light'}`}
+                  onClick={onToggleTheme}
+                  aria-pressed={siteTheme === 'dark'}
+                  aria-label={`Switch to ${siteTheme === 'dark' ? 'light' : 'dark'} mode`}
                 >
-                  Login
-                </Link>
-              </motion.li>
-              <motion.li
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <Link 
-                  to="/signup" 
-                  className="register-btn"
-                  onClick={() => handleLinkClick('Register')}
-                >
-                  Register
-                </Link>
-              </motion.li>
-              <motion.li
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55 }}
-              >
-                <Link 
-                  to="/profile" 
-                  className="profile-btn"
-                  onClick={() => handleLinkClick('Profile')}
-                >
-                  👤 Profile
-                </Link>
+                  {siteTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </button>
               </motion.li>
             </ul>
           </motion.div>

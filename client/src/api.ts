@@ -6,6 +6,68 @@ interface RetriableRequestConfig extends AxiosRequestConfig {
   __triedBaseUrls?: string[];
 }
 
+export type UserRole = 'admin' | 'customer' | string;
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role?: UserRole;
+  phone?: string | null;
+  address?: string | null;
+  profile_photo_url?: string | null;
+}
+
+export interface DashboardStats {
+  totalUsers: number;
+  totalPackages: number;
+  pendingBookings: number;
+  totalRevenue: number;
+}
+
+export interface TourPackageRecord {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  duration: number;
+  location: string;
+  max_participants: number;
+  image_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type BookingStatus = 'pending' | 'approved' | 'rejected';
+
+export interface BookingRecord {
+  id: number;
+  user_id: number;
+  tour_package_id: number;
+  booking_date: string;
+  participants: number;
+  total_price: number;
+  status: BookingStatus;
+  payment_status?: string;
+  created_at?: string;
+  updated_at?: string;
+  user?: AuthUser | null;
+  tour_package?: TourPackageRecord | null;
+}
+
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toOptionalString = (value: unknown): string | null => {
+  return typeof value === 'string' ? value : null;
+};
+
+const toStringValue = (value: unknown, fallback = ''): string => {
+  return typeof value === 'string' ? value : fallback;
+};
+
 class ApiClient {
   private client: AxiosInstance;
   private static tokenKey = 'jwt_token';
@@ -18,6 +80,93 @@ class ApiClient {
     'http://127.0.0.1:8000',
   ];
   private baseUrlCandidates: string[];
+
+  private static normalizeUserRecord(user: unknown): AuthUser | null {
+    if (!user || typeof user !== 'object') {
+      return null;
+    }
+
+    const record = user as Record<string, unknown>;
+
+    return {
+      id: toNumber(record.id),
+      name: toStringValue(record.name),
+      email: toStringValue(record.email),
+      role: typeof record.role === 'string' ? record.role : undefined,
+      phone: toOptionalString(record.phone),
+      address: toOptionalString(record.address),
+      profile_photo_url: toOptionalString(record.profile_photo_url),
+    };
+  }
+
+  private normalizePackageRecord(pkg: unknown): TourPackageRecord | null {
+    if (!pkg || typeof pkg !== 'object') {
+      return null;
+    }
+
+    const record = pkg as Record<string, unknown>;
+
+    return {
+      id: toNumber(record.id),
+      title: toStringValue(record.title),
+      description: toStringValue(record.description),
+      price: toNumber(record.price),
+      duration: toNumber(record.duration),
+      location: toStringValue(record.location),
+      max_participants: toNumber(record.max_participants),
+      image_url: toOptionalString(record.image_url),
+      created_at: toOptionalString(record.created_at) || undefined,
+      updated_at: toOptionalString(record.updated_at) || undefined,
+    };
+  }
+
+  private normalizePackageList(data: unknown): TourPackageRecord[] {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data
+      .map((item) => this.normalizePackageRecord(item))
+      .filter((item): item is TourPackageRecord => item !== null);
+  }
+
+  private normalizeBookingRecord(booking: unknown): BookingRecord | null {
+    if (!booking || typeof booking !== 'object') {
+      return null;
+    }
+
+    const record = booking as Record<string, unknown>;
+    const relationPackage = record.tour_package ?? record.tourPackage;
+    const normalizedPackage = this.normalizePackageRecord(relationPackage);
+    const status = toStringValue(record.status, 'pending');
+    const normalizedStatus: BookingStatus =
+      status === 'approved' || status === 'rejected' ? status : 'pending';
+
+    return {
+      id: toNumber(record.id),
+      user_id: toNumber(record.user_id),
+      tour_package_id: toNumber(record.tour_package_id),
+      booking_date: toStringValue(record.booking_date),
+      participants: toNumber(record.participants),
+      total_price: toNumber(record.total_price),
+      status: normalizedStatus,
+      payment_status: toOptionalString(record.payment_status) || undefined,
+      created_at: toOptionalString(record.created_at) || undefined,
+      updated_at: toOptionalString(record.updated_at) || undefined,
+      user: ApiClient.normalizeUserRecord(record.user),
+      tour_package: normalizedPackage,
+    };
+  }
+
+  private normalizeBookingList(data: unknown): BookingRecord[] {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data
+      .map((item) => this.normalizeBookingRecord(item))
+      .filter((item): item is BookingRecord => item !== null);
+  }
 
   constructor() {
     this.configuredBaseUrl = this.normalizeBaseUrl(secrets.backendEndpoint);
@@ -111,15 +260,31 @@ class ApiClient {
   }
 
   // Store user data
-  static setUser(user: any): void {
-    localStorage.setItem(this.userKey, JSON.stringify(user));
+  static setUser(user: unknown): void {
+    const normalizedUser = this.normalizeUserRecord(user);
+
+    if (!normalizedUser) {
+      this.removeUser();
+      return;
+    }
+
+    localStorage.setItem(this.userKey, JSON.stringify(normalizedUser));
   }
 
   // Get user data
-  static getUser(): any | null {
+  static getUser(): AuthUser | null {
     try {
       const userStr = localStorage.getItem(this.userKey);
-      return userStr ? JSON.parse(userStr) : null;
+      if (!userStr) {
+        return null;
+      }
+
+      const normalizedUser = this.normalizeUserRecord(JSON.parse(userStr));
+      if (!normalizedUser) {
+        this.removeUser();
+      }
+
+      return normalizedUser;
     } catch {
       this.removeUser();
       return null;
@@ -142,6 +307,11 @@ class ApiClient {
     return !!this.getToken();
   }
 
+  // Check if current user is an admin
+  static isAdmin(): boolean {
+    return this.getUser()?.role === 'admin';
+  }
+
   // Auth methods
   async login(email: string, password: string) {
     try {
@@ -152,7 +322,9 @@ class ApiClient {
       }
       return response.data;
     } catch (error: any) {
-      this.handleError(error);
+      if (error.response?.status !== 401 && error.response?.status !== 422) {
+        this.handleError(error);
+      }
       throw error;
     }
   }
@@ -209,6 +381,9 @@ class ApiClient {
   async getMe() {
     try {
       const response = await this.client.get('/api/me');
+      if (response.data?.status === 'success' && response.data?.user) {
+        ApiClient.setUser(response.data.user);
+      }
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -412,6 +587,128 @@ class ApiClient {
     }
   }
 
+  // --- Admin Dashboard Methods ---
+  async getDashboardStats() {
+    try {
+      const response = await this.client.get('/api/admin/dashboard-stats');
+      return {
+        totalUsers: toNumber(response.data?.totalUsers),
+        totalPackages: toNumber(response.data?.totalPackages),
+        pendingBookings: toNumber(response.data?.pendingBookings),
+        totalRevenue: toNumber(response.data?.totalRevenue),
+      } as DashboardStats;
+    } catch (error) {
+      this.handleError(error);
+      return null;
+    }
+  }
+
+  // --- Admin Package Methods ---
+  async getAdminPackages() {
+    try {
+      const response = await this.client.get('/api/tour-packages');
+      return this.normalizePackageList(response.data);
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  async createPackage(data: any) {
+    try {
+      const response = await this.client.post('/api/tour-packages', data);
+      return this.normalizePackageRecord(response.data);
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
+  async updatePackage(id: number, data: any) {
+    try {
+      const response = await this.client.put(`/api/tour-packages/${id}`, data);
+      return this.normalizePackageRecord(response.data);
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
+  async deletePackage(id: number) {
+    try {
+      const response = await this.client.delete(`/api/tour-packages/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // --- Admin Booking Methods ---
+  async getAdminBookings() {
+    try {
+      const response = await this.client.get('/api/admin/bookings');
+      return this.normalizeBookingList(response.data);
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  async updateBookingStatus(id: number, status: string) {
+    try {
+      const response = await this.client.put(`/api/admin/bookings/${id}/status`, { status });
+      return this.normalizeBookingRecord(response.data);
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
+  // --- Customer/Public Package Methods ---
+  async getPackages() {
+    return this.getAdminPackages();
+  }
+
+  async getPackage(id: number) {
+    try {
+      const response = await this.client.get(`/api/tour-packages/${id}`);
+      return this.normalizePackageRecord(response.data);
+    } catch (error) {
+      this.handleError(error);
+      return null;
+    }
+  }
+
+  // --- Customer Booking Methods ---
+  async getMyBookings() {
+    try {
+      const response = await this.client.get('/api/my-bookings');
+      return this.normalizeBookingList(response.data);
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  async createBooking(data: { tour_package_id: number; booking_date: string; participants: number }) {
+    try {
+      const response = await this.client.post('/api/bookings', data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status !== 422) {
+        this.handleError(error);
+      }
+      throw error;
+    }
+  }
+
   // Handle common errors
   handleError(error: any) {
     const activeBaseUrl = this.normalizeBaseUrl(
@@ -420,7 +717,10 @@ class ApiClient {
 
     if (error.response) {
       // Server responded with a status other than 2xx
-      const message = error.response.data?.message || 'Something went wrong';
+      const message =
+        error.response.data?.message ||
+        error.response.data?.error ||
+        'Something went wrong';
       console.error(`API Error: ${error.response.status} - ${message}`);
       toast.error(message);
     } else if (error.request) {

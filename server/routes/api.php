@@ -8,6 +8,9 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PasswordResetCodeController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\TourGuideController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TourPackageController;
+use App\Http\Controllers\BookingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +33,10 @@ Route::post('/reset-password', [PasswordResetCodeController::class, 'reset']);
 Route::get('/tour-guides', [TourGuideController::class, 'index']);
 Route::get('/tour-guides/{id}', [TourGuideController::class, 'show']);
 
+// Tour Package routes (public - read only)
+Route::get('/tour-packages', [TourPackageController::class, 'index']);
+Route::get('/tour-packages/{id}', [TourPackageController::class, 'show']);
+
 // Contact Us route (public)
 Route::post('/contact-messages', [ContactMessageController::class, 'store']);
 
@@ -45,6 +52,10 @@ Route::middleware(['auth:api'])->group(function () {
     // Payment routes
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::post('/payments', [PaymentController::class, 'store']);
+
+    // Customer route for bookings
+    Route::get('/my-bookings', [BookingController::class, 'userBookings']);
+    Route::post('/bookings', [BookingController::class, 'store']);
 });
 
 // Session routes (require authentication)
@@ -58,4 +69,16 @@ Route::middleware(['auth:api', 'check.admin'])->group(function () {
     Route::post('/session', [SessionController::class, 'createSession']);
     Route::put('/session', [SessionController::class, 'updateSession']);
     Route::post('/sessions', [SessionController::class, 'viewSessions']);
+
+    // Dashboard Stats
+    Route::get('/admin/dashboard-stats', [DashboardController::class, 'getStats']);
+
+    // Manage Tour Packages
+    Route::post('/tour-packages', [TourPackageController::class, 'store']);
+    Route::put('/tour-packages/{id}', [TourPackageController::class, 'update']);
+    Route::delete('/tour-packages/{id}', [TourPackageController::class, 'destroy']);
+
+    // Manage Bookings
+    Route::get('/admin/bookings', [BookingController::class, 'index']);
+    Route::put('/admin/bookings/{id}/status', [BookingController::class, 'updateStatus']);
 });
