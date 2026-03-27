@@ -67,21 +67,19 @@ https://www.figma.com/design/xkR6GmohzjaGd7t03VspWV/TravelWorld---Travel-Plannin
 ### Phase 1 (Current)
 - Basic tour management
 - Customer booking system 
-- Admin dashboard
-- Payment integration
+- Authentication
 
 ### Phase 2 (Planned)
-- Multi-language support
-- Mobile app (Flutter/React Native)
-- API for mobile apps
-- Affiliate program
-- Loyalty points system
+-Fogot-Password && Reset-Password
+-Tour-Guide Details
+-Hire The Tour-Guides
+
+-Profile
 
 ### Phase 3 (Future)
-- AI-powered recommendations
-- Virtual tours (360° view)
-- Integration with flight/hotel APIs
-- Blockchain-based booking verification
+- Admin Dashboard
+- Payment integration
+- Deploying The Website
 
 
 
