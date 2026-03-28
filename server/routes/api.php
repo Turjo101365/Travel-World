@@ -2,7 +2,12 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ContactMessageController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PasswordResetCodeController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\TourGuideController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,12 +20,42 @@ use App\Http\Controllers\SessionController;
 |
 */
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+// Public routes
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [PasswordResetCodeController::class, 'sendCode']);
+Route::post('/reset-password', [PasswordResetCodeController::class, 'reset']);
+
+// Tour Guide routes (public - read only)
+Route::get('/tour-guides', [TourGuideController::class, 'index']);
+Route::get('/tour-guides/{id}', [TourGuideController::class, 'show']);
+
+// Contact Us route (public)
+Route::post('/contact-messages', [ContactMessageController::class, 'store']);
+
+// Protected routes (JWT authentication)
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/profile/photo', [AuthController::class, 'uploadProfilePhoto']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/refresh', [AuthController::class, 'refresh']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    // Payment routes
+    Route::get('/payments', [PaymentController::class, 'index']);
+    Route::post('/payments', [PaymentController::class, 'store']);
 });
 
-Route::get('/session', [SessionController::class, 'getSession']);
-Route::post('/session', [SessionController::class, 'createSession'])->middleware('check.admin');
-Route::put('/session', [SessionController::class, 'updateSession'])->middleware('check.admin');
-Route::post('/sessions', [SessionController::class, 'viewSessions'])->middleware('check.admin');
-Route::post('/attendance', [SessionController::class, 'submitAttendance']);
+// Session routes (require authentication)
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/session', [SessionController::class, 'getSession']);
+    Route::post('/attendance', [SessionController::class, 'submitAttendance']);
+});
+
+// Admin-only routes
+Route::middleware(['auth:api', 'check.admin'])->group(function () {
+    Route::post('/session', [SessionController::class, 'createSession']);
+    Route::put('/session', [SessionController::class, 'updateSession']);
+    Route::post('/sessions', [SessionController::class, 'viewSessions']);
+});

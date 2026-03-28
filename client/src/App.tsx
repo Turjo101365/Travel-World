@@ -5,11 +5,13 @@ import Login from './views/login';
 import Register from './views/register';
 import Contact from './views/contact';
 import TourGuide from './views/tourguide';
+import GuideDetails from './views/guide-details';
 import ResetPassword from './views/reset-password';
 import ForgotPassword from './views/forgot-password';
 import Profile from './views/profile';
 import Navbar from './components/Navbar';
-import PaymentIntegration from './views/PaymentIntegration';  
+import PaymentIntegration from './views/PaymentIntegration';
+import ProtectedRoute from './ProtectedRoute';  
 
 import { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
@@ -21,7 +23,16 @@ function App() {
   useEffect(() => {
     if (location.pathname === '/about' || location.pathname === '/' || location.pathname === '/home') {
       setNavbarTheme('about');
-    } else if (location.pathname === '/contact' || location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/forgot-password' || location.pathname === '/reset-password' || location.pathname === '/profile') {
+    } else if (
+      location.pathname === '/contact' ||
+      location.pathname === '/login' ||
+      location.pathname === '/signup' ||
+      location.pathname === '/forgot-password' ||
+      location.pathname === '/reset-password' ||
+      location.pathname === '/profile' ||
+      location.pathname.startsWith('/payment/') ||
+      location.pathname.startsWith('/guide/')
+    ) {
       setNavbarTheme('dark');
     } else {
       setNavbarTheme('default');
@@ -33,17 +44,20 @@ function App() {
     <>
       <Navbar theme={navbarTheme} />
       <Routes>
-      <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} /> 
         <Route path="/signup" element={<Register />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/tourguide" element={<TourGuide guides={[]} />} />
+        <Route path="/tourguide" element={<TourGuide />} />
+        <Route path="/guide/:id" element={<GuideDetails />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/PaymentIntegration" element={<PaymentIntegration userId="" userName="" tourName="" amount={0} />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/payment/:guideId" element={<PaymentIntegration />} />
+        </Route>
       </Routes>
 
       <Toaster

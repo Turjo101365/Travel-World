@@ -1,39 +1,179 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import '../css/profile.css';
+import ApiClient from '../api';
+
+interface UserProfileData {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  profilePhotoUrl: string;
+}
+
+interface HiredGuideDetails {
+  id: number;
+  name: string;
+  location: string;
+  hire_cost?: number | string;
+  phone?: string;
+  email?: string;
+  photo?: string;
+}
+
+interface HiredGuideBooking {
+  id: number;
+  transaction_id: string;
+  amount: number | string;
+  currency: string;
+  days: number;
+  status: string;
+  paid_at: string;
+  guide?: HiredGuideDetails;
+}
 
 const Profile: React.FC = () => {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [loadingBookings, setLoadingBookings] = useState(true);
+  const [bookingsError, setBookingsError] = useState('');
+  const [hiredBookings, setHiredBookings] = useState<HiredGuideBooking[]>([]);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   
-  // Mock user data - in real app this would come from props/context/API
-  const [userData, setUserData] = useState({
-    fullName: 'John Traveler',
-    username: 'johntraveler',
-    email: 'john.traveler@email.com',
-    phone: '+1 234 567 8900',
-    address: '123 Adventure Street, New York, NY 10001',
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'
+  // User data from API
+  const [userData, setUserData] = useState<UserProfileData>({
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    profilePhotoUrl: ''
+  });
+  const [savedUserData, setSavedUserData] = useState<UserProfileData>({
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    profilePhotoUrl: ''
   });
 
-  // Stats data
-  const stats = [
-    { icon: '✈️', label: 'Trips Booked', value: '12' },
-    { icon: '❤️', label: 'Favorites', value: '28' },
-    { icon: '🌍', label: 'Countries Visited', value: '8' },
-    { icon: '⭐', label: 'Reviews', value: '15' }
-  ];
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const api = new ApiClient();
+        const response = await api.getMe();
+        if (response && response.status === 'success' && response.user) {
+          const profileData = {
+            fullName: response.user.name || '',
+            email: response.user.email || '',
+            phone: response.user.phone || '',
+            address: response.user.address || '',
+            profilePhotoUrl: response.user.profile_photo_url || ''
+          };
+          setUserData(profileData);
+          setSavedUserData(profileData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        // Use stored user data as fallback
+        const storedUser = ApiClient.getUser();
+        if (storedUser) {
+          const profileData = {
+            fullName: storedUser.name || '',
+            email: storedUser.email || '',
+            phone: storedUser.phone || '',
+            address: storedUser.address || '',
+            profilePhotoUrl: storedUser.profile_photo_url || ''
+          };
+          setUserData(profileData);
+          setSavedUserData(profileData);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Travel history
-  const travelHistory = [
-    { destination: 'Bali, Indonesia', date: 'Dec 2024', status: 'Completed' },
-    { destination: 'Paris, France', date: 'Oct 2024', status: 'Completed' },
-    { destination: 'Tokyo, Japan', date: 'Aug 2024', status: 'Completed' }
-  ];
+    fetchUserData();
+  }, []);
+
+  const fetchHiredGuides = useCallback(async () => {
+    setLoadingBookings(true);
+    setBookingsError('');
+
+    try {
+      const api = new ApiClient();
+      const response = await api.getPayments();
+
+      if (response?.status === 'success' && Array.isArray(response.data)) {
+        setHiredBookings(response.data as HiredGuideBooking[]);
+        return;
+      }
+
+      setHiredBookings([]);
+      setBookingsError(response?.message || 'Failed to load hired tour guides.');
+    } catch (error) {
+      console.error('Failed to fetch hired guides:', error);
+      setHiredBookings([]);
+      setBookingsError('Failed to load hired tour guides.');
+    } finally {
+      setLoadingBookings(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHiredGuides();
+  }, [fetchHiredGuides]);
+
+  const formatBookedDate = (dateValue: string) => {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      return 'N/A';
+    }
+
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatAmount = (amount: number | string, currency = 'USD') => {
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount)) {
+      return `${currency} 0.00`;
+    }
+
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency || 'USD',
+      }).format(numericAmount);
+    } catch {
+      return `$${numericAmount.toFixed(2)}`;
+    }
+  };
 
   const handleEdit = () => {
-    setIsEditing(!isEditing);
+    if (isEditing) {
+      // Revert unsaved edits if user cancels editing.
+      setUserData(savedUserData);
+      setIsEditing(false);
+      return;
+    }
+
+    setIsEditing(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,11 +184,205 @@ const Profile: React.FC = () => {
     });
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // API call to save would go here
-    console.log('Profile saved:', userData);
+  const handleSave = async () => {
+    if (savingProfile) return;
+
+    setSavingProfile(true);
+    try {
+      const api = new ApiClient();
+      const response = await api.updateProfile(
+        userData.fullName.trim(),
+        userData.email.trim(),
+        userData.phone.trim(),
+        userData.address.trim()
+      );
+
+      if (response?.status === 'success' && response?.user) {
+        const updatedProfile = {
+          fullName: response.user.name || '',
+          email: response.user.email || '',
+          phone: response.user.phone || '',
+          address: response.user.address || '',
+          profilePhotoUrl: response.user.profile_photo_url || '',
+        };
+        setUserData(updatedProfile);
+        setSavedUserData(updatedProfile);
+        setIsEditing(false);
+        toast.success(response?.message || 'Profile updated successfully.');
+        return;
+      }
+
+      toast.error(response?.message || 'Failed to update profile.');
+    } catch (error: any) {
+      const validationErrors = error?.response?.data?.errors as Record<string, string[]> | undefined;
+      const firstValidationError = validationErrors ? Object.values(validationErrors)[0]?.[0] : null;
+      toast.error(
+        firstValidationError ||
+        error?.response?.data?.message ||
+        'Failed to update profile. Please try again.'
+      );
+    } finally {
+      setSavingProfile(false);
+    }
   };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!supportedTypes.includes(file.type)) {
+      toast.error('Please upload a JPG, PNG, or WEBP image.');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Photo size must be within 2MB.');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const api = new ApiClient();
+      const response = await api.uploadProfilePhoto(file);
+
+      if (response?.status === 'success' && response?.user) {
+        const updatedProfile = {
+          fullName: response.user.name || userData.fullName,
+          email: response.user.email || userData.email,
+          phone: response.user.phone || '',
+          address: response.user.address || '',
+          profilePhotoUrl: response.user.profile_photo_url || '',
+        };
+
+        setUserData(updatedProfile);
+        setSavedUserData(updatedProfile);
+        toast.success(response?.message || 'Profile photo uploaded successfully.');
+        e.target.value = '';
+        return;
+      }
+
+      toast.error(response?.message || 'Failed to upload profile photo.');
+    } catch (error: any) {
+      const validationErrors = error?.response?.data?.errors as Record<string, string[]> | undefined;
+      const firstValidationError = validationErrors ? Object.values(validationErrors)[0]?.[0] : null;
+      toast.error(
+        firstValidationError ||
+        error?.response?.data?.message ||
+        'Failed to upload profile photo. Please try again.'
+      );
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
+  };
+
+  const openPasswordModal = () => {
+    setPasswordError('');
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setShowPasswordModal(true);
+  };
+
+  const closePasswordModal = (force = false) => {
+    if (updatingPassword && !force) return;
+    setShowPasswordModal(false);
+    setPasswordError('');
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
+  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+    setPasswordError('');
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (updatingPassword) return;
+
+    const currentPassword = passwordData.currentPassword.trim();
+    const newPassword = passwordData.newPassword.trim();
+    const confirmPassword = passwordData.confirmPassword.trim();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('Please fill in all password fields.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New password and confirm password do not match.');
+      return;
+    }
+
+    setUpdatingPassword(true);
+    setPasswordError('');
+
+    try {
+      const api = new ApiClient();
+      const response = await api.changePassword(currentPassword, newPassword, confirmPassword);
+
+      if (response?.status === 'success') {
+        toast.success(response?.message || 'Password changed successfully.');
+        closePasswordModal(true);
+        return;
+      }
+
+      setPasswordError(response?.message || 'Failed to change password.');
+    } catch (error: any) {
+      const validationErrors = error?.response?.data?.errors as Record<string, string[]> | undefined;
+      const firstValidationError = validationErrors ? Object.values(validationErrors)[0]?.[0] : null;
+      setPasswordError(
+        firstValidationError ||
+        error?.response?.data?.message ||
+        'Failed to change password. Please try again.'
+      );
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    try {
+      const api = new ApiClient();
+      await api.logout();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+      ApiClient.logout();
+      navigate('/login', { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="profile-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
@@ -76,17 +410,33 @@ const Profile: React.FC = () => {
         >
           <div className="profile-header-bg"></div>
           <div className="profile-header-content">
-            <motion.div 
-              className="profile-avatar"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-            >
-              <img src={userData.photo} alt={userData.fullName} />
-              <div className="avatar-edit">
-                <span>📷</span>
-              </div>
-            </motion.div>
+            <div className="profile-avatar">
+              {userData.profilePhotoUrl ? (
+                <img
+                  src={userData.profilePhotoUrl}
+                  alt={`${userData.fullName || 'User'} profile`}
+                  onError={(event) => {
+                    (event.target as HTMLImageElement).src = '/images/img.jpg';
+                  }}
+                />
+              ) : (
+                <div className="profile-avatar-placeholder">👤</div>
+              )}
+
+              <label className={`avatar-edit ${uploadingPhoto ? 'disabled' : ''}`} title="Upload profile photo">
+                <span>{uploadingPhoto ? '⏳' : '📷'}</span>
+                <input
+                  className="avatar-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhoto}
+                />
+              </label>
+            </div>
+            <p className="profile-photo-note">
+              {uploadingPhoto ? 'Uploading photo...' : 'Upload photo (JPG, PNG, WEBP, max 2MB)'}
+            </p>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -94,25 +444,17 @@ const Profile: React.FC = () => {
             >
               {userData.fullName}
             </motion.h1>
-            <motion.p 
-              className="username"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              @{userData.username}
-            </motion.p>
             <motion.div 
               className="profile-actions"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <button className="btn-edit-profile" onClick={handleEdit}>
-                {isEditing ? '✏️ Cancel' : '✏️ Edit Profile'}
-              </button>
-              <button className="btn-change-password" onClick={() => setShowPasswordModal(true)}>
+              <button className="btn-change-password" onClick={openPasswordModal}>
                 🔐 Change Password
+              </button>
+              <button className="btn-logout-profile" onClick={handleLogout} disabled={loggingOut}>
+                {loggingOut ? '⏳ Logging out...' : '🚪 Logout'}
               </button>
             </motion.div>
           </div>
@@ -128,7 +470,17 @@ const Profile: React.FC = () => {
           >
             <div className="card-header">
               <h2>👤 Personal Information</h2>
-              {isEditing && <span className="editing-badge">Editing</span>}
+              <div className="card-header-actions">
+                {isEditing && <span className="editing-badge">Editing</span>}
+                <button
+                  type="button"
+                  className="btn-edit-inline"
+                  onClick={handleEdit}
+                  disabled={savingProfile}
+                >
+                  {isEditing ? 'Cancel' : 'Edit'}
+                </button>
+              </div>
             </div>
             <div className="card-body">
               <div className="info-group">
@@ -162,75 +514,48 @@ const Profile: React.FC = () => {
               <div className="info-group">
                 <label>Phone Number</label>
                 {isEditing ? (
-                  <input 
-                    type="tel" 
+                  <input
+                    type="text"
                     name="phone"
                     value={userData.phone}
                     onChange={handleChange}
                     className="edit-input"
+                    placeholder="Add phone number"
                   />
                 ) : (
-                  <p>{userData.phone}</p>
+                  <p>{userData.phone || 'Not set'}</p>
                 )}
               </div>
               <div className="info-group">
                 <label>Address</label>
                 {isEditing ? (
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="address"
                     value={userData.address}
                     onChange={handleChange}
                     className="edit-input"
+                    placeholder="Add address"
                   />
                 ) : (
-                  <p>{userData.address}</p>
+                  <p>{userData.address || 'Not set'}</p>
                 )}
               </div>
               {isEditing && (
                 <motion.button 
                   className="btn-save"
                   onClick={handleSave}
+                  disabled={savingProfile}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  💾 Save Changes
+                  {savingProfile ? 'Saving...' : '💾 Save Changes'}
                 </motion.button>
               )}
             </div>
           </motion.div>
 
-          {/* Stats Card */}
-          <motion.div 
-            className="profile-card stats-card"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            <div className="card-header">
-              <h2>📊 Travel Stats</h2>
-            </div>
-            <div className="card-body">
-              <div className="stats-grid">
-                {stats.map((stat, index) => (
-                  <motion.div 
-                    key={stat.label}
-                    className="stat-item"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 + index * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <span className="stat-icon">{stat.icon}</span>
-                    <span className="stat-value">{stat.value}</span>
-                    <span className="stat-label">{stat.label}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Travel History Card */}
+          {/* Hired Tour Guides Card */}
           <motion.div 
             className="profile-card history-card"
             initial={{ opacity: 0, y: 30 }}
@@ -238,75 +563,79 @@ const Profile: React.FC = () => {
             transition={{ delay: 0.5, duration: 0.5 }}
           >
             <div className="card-header">
-              <h2>🗺️ Travel History</h2>
-              <Link to="/bookings" className="view-all">View All →</Link>
+              <h2>🧳 Hired Tour Guides</h2>
+              <span className="view-all">{hiredBookings.length} Booking{hiredBookings.length === 1 ? '' : 's'}</span>
             </div>
             <div className="card-body">
-              <div className="travel-list">
-                {travelHistory.map((trip, index) => (
-                  <motion.div 
-                    key={index}
-                    className="travel-item"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="travel-icon">🛫</div>
-                    <div className="travel-details">
-                      <h4>{trip.destination}</h4>
-                      <p>{trip.date}</p>
-                    </div>
-                    <span className="travel-status completed">{trip.status}</span>
-                  </motion.div>
-                ))}
-              </div>
+              {loadingBookings ? (
+                <div className="bookings-empty-state">Loading hired guides...</div>
+              ) : bookingsError ? (
+                <div className="bookings-empty-state">
+                  <p>{bookingsError}</p>
+                  <button type="button" className="btn-bookings-retry" onClick={fetchHiredGuides}>
+                    Retry
+                  </button>
+                </div>
+              ) : hiredBookings.length === 0 ? (
+                <div className="bookings-empty-state">
+                  <p>You haven’t hired any guide yet.</p>
+                  <Link to="/tourguide" className="btn-bookings-retry">
+                    Hire a Guide
+                  </Link>
+                </div>
+              ) : (
+                <div className="booking-list">
+                  {hiredBookings.map((booking, index) => (
+                    <motion.div
+                      key={booking.id}
+                      className="booking-item"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 + index * 0.08 }}
+                      whileHover={{ x: 5 }}
+                    >
+                      <div className="booking-top-row">
+                        <div className="travel-icon">🛫</div>
+                        <div className="travel-details">
+                          <h4>{booking.guide?.name || 'Tour Guide'}</h4>
+                          <p>{booking.guide?.location || 'Location not available'}</p>
+                        </div>
+                        <span className="travel-status completed">{booking.status || 'completed'}</span>
+                      </div>
+
+                      <div className="booking-meta-grid">
+                        <div>
+                          <span className="booking-label">Booked On</span>
+                          <p>{formatBookedDate(booking.paid_at)}</p>
+                        </div>
+                        <div>
+                          <span className="booking-label">Days</span>
+                          <p>{booking.days} day{booking.days > 1 ? 's' : ''}</p>
+                        </div>
+                        <div>
+                          <span className="booking-label">Total Cost</span>
+                          <p>{formatAmount(booking.amount, booking.currency || 'USD')}</p>
+                        </div>
+                        <div>
+                          <span className="booking-label">Per Day</span>
+                          <p>{formatAmount(booking.guide?.hire_cost || 0, booking.currency || 'USD')}</p>
+                        </div>
+                        <div>
+                          <span className="booking-label">Guide Email</span>
+                          <p>{booking.guide?.email || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <span className="booking-label">Guide Phone</span>
+                          <p>{booking.guide?.phone || 'Not provided'}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
 
-          {/* Quick Actions Card */}
-          <motion.div 
-            className="profile-card actions-card"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-          >
-            <div className="card-header">
-              <h2>⚡ Quick Actions</h2>
-            </div>
-            <div className="card-body">
-              <div className="quick-actions">
-                <motion.button 
-                  className="action-btn"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span>🎯</span> Book New Trip
-                </motion.button>
-                <motion.button 
-                  className="action-btn"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span>❤️</span> My Favorites
-                </motion.button>
-                <motion.button 
-                  className="action-btn"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span>💳</span> Payment Methods
-                </motion.button>
-                <motion.button 
-                  className="action-btn"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span>🔔</span> Notifications
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
         </div>
 
         {/* Back to Home */}
@@ -328,7 +657,7 @@ const Profile: React.FC = () => {
           className="modal-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          onClick={() => setShowPasswordModal(false)}
+          onClick={() => closePasswordModal()}
         >
           <motion.div 
             className="password-modal"
@@ -337,28 +666,55 @@ const Profile: React.FC = () => {
             onClick={e => e.stopPropagation()}
           >
             <h3>🔐 Change Password</h3>
-            <div className="modal-body">
+            <form className="modal-body" onSubmit={handleChangePassword}>
               <div className="form-group">
                 <label>Current Password</label>
-                <input type="password" placeholder="Enter current password" />
+                <input
+                  type="password"
+                  name="currentPassword"
+                  value={passwordData.currentPassword}
+                  onChange={handlePasswordInputChange}
+                  placeholder="Enter current password"
+                  autoComplete="current-password"
+                  required
+                />
               </div>
               <div className="form-group">
                 <label>New Password</label>
-                <input type="password" placeholder="Enter new password" />
+                <input
+                  type="password"
+                  name="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordInputChange}
+                  placeholder="Enter new password"
+                  autoComplete="new-password"
+                  minLength={6}
+                  required
+                />
               </div>
               <div className="form-group">
                 <label>Confirm New Password</label>
-                <input type="password" placeholder="Confirm new password" />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordInputChange}
+                  placeholder="Confirm new password"
+                  autoComplete="new-password"
+                  minLength={6}
+                  required
+                />
               </div>
-            </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowPasswordModal(false)}>
-                Cancel
-              </button>
-              <button className="btn-confirm">
-                Update Password
-              </button>
-            </div>
+              {passwordError ? <p className="password-error-text">{passwordError}</p> : null}
+              <div className="modal-actions">
+                <button type="button" className="btn-cancel" onClick={() => closePasswordModal()} disabled={updatingPassword}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-confirm" disabled={updatingPassword}>
+                  {updatingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
           </motion.div>
         </motion.div>
       )}
@@ -367,4 +723,3 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
-

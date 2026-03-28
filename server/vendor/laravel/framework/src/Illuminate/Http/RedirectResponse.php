@@ -169,7 +169,7 @@ class RedirectResponse extends BaseRedirectResponse
     public function withFragment($fragment)
     {
         return $this->withoutFragment()
-                ->setTargetUrl($this->getTargetUrl().'#'.Str::after($fragment, '#'));
+            ->setTargetUrl($this->getTargetUrl().'#'.Str::after($fragment, '#'));
     }
 
     /**
@@ -249,7 +249,7 @@ class RedirectResponse extends BaseRedirectResponse
             return $this->macroCall($method, $parameters);
         }
 
-        if (Str::startsWith($method, 'with')) {
+        if (str_starts_with($method, 'with')) {
             return $this->with(Str::snake(substr($method, 4)), $parameters[0]);
         }
 

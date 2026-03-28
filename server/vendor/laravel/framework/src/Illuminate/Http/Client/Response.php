@@ -3,13 +3,19 @@
 namespace Illuminate\Http\Client;
 
 use ArrayAccess;
+use GuzzleHttp\Psr7\StreamWrapper;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Fluent;
 use Illuminate\Support\Traits\Macroable;
 use LogicException;
+use Stringable;
 
-class Response implements ArrayAccess
+/**
+ * @mixin \Psr\Http\Message\ResponseInterface
+ */
+class Response implements ArrayAccess, Stringable
 {
-    use Macroable {
+    use Concerns\DeterminesStatusCode, Macroable {
         __call as macroCall;
     }
 
@@ -26,6 +32,20 @@ class Response implements ArrayAccess
      * @var array
      */
     protected $decoded;
+
+    /**
+     * The request cookies.
+     *
+     * @var \GuzzleHttp\Cookie\CookieJar
+     */
+    public $cookies;
+
+    /**
+     * The transfer stats for the request.
+     *
+     * @var \GuzzleHttp\TransferStats|null
+     */
+    public $transferStats;
 
     /**
      * Create a new response instance.
@@ -71,7 +91,7 @@ class Response implements ArrayAccess
     /**
      * Get the JSON decoded body of the response as an object.
      *
-     * @return object
+     * @return object|null
      */
     public function object()
     {
@@ -86,7 +106,30 @@ class Response implements ArrayAccess
      */
     public function collect($key = null)
     {
-        return Collection::make($this->json($key));
+        return new Collection($this->json($key));
+    }
+
+    /**
+     * Get the JSON decoded body of the response as a fluent object.
+     *
+     * @param  string|null  $key
+     * @return \Illuminate\Support\Fluent
+     */
+    public function fluent($key = null)
+    {
+        return new Fluent((array) $this->json($key));
+    }
+
+    /**
+     * Get the body of the response as a PHP resource.
+     *
+     * @return resource
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function resource()
+    {
+        return StreamWrapper::getResource($this->response->getBody());
     }
 
     /**
@@ -137,7 +180,7 @@ class Response implements ArrayAccess
      */
     public function effectiveUri()
     {
-        return optional($this->transferStats)->getEffectiveUri();
+        return $this->transferStats?->getEffectiveUri();
     }
 
     /**
@@ -151,16 +194,6 @@ class Response implements ArrayAccess
     }
 
     /**
-     * Determine if the response code was "OK".
-     *
-     * @return bool
-     */
-    public function ok()
-    {
-        return $this->status() === 200;
-    }
-
-    /**
      * Determine if the response was a redirect.
      *
      * @return bool
@@ -168,26 +201,6 @@ class Response implements ArrayAccess
     public function redirect()
     {
         return $this->status() >= 300 && $this->status() < 400;
-    }
-
-    /**
-     * Determine if the response was a 401 "Unauthorized" response.
-     *
-     * @return bool
-     */
-    public function unauthorized()
-    {
-        return $this->status() === 401;
-    }
-
-    /**
-     * Determine if the response was a 403 "Forbidden" response.
-     *
-     * @return bool
-     */
-    public function forbidden()
-    {
-        return $this->status() === 403;
     }
 
     /**
@@ -252,7 +265,7 @@ class Response implements ArrayAccess
      */
     public function handlerStats()
     {
-        return optional($this->transferStats)->getHandlerStats() ?? [];
+        return $this->transferStats?->getHandlerStats() ?? [];
     }
 
     /**
@@ -292,7 +305,6 @@ class Response implements ArrayAccess
     /**
      * Throw an exception if a server or client error occurred.
      *
-     * @param  \Closure|null  $callback
      * @return $this
      *
      * @throws \Illuminate\Http\Client\RequestException
@@ -315,14 +327,135 @@ class Response implements ArrayAccess
     /**
      * Throw an exception if a server or client error occurred and the given condition evaluates to true.
      *
-     * @param  bool  $condition
+     * @param  \Closure|bool  $condition
      * @return $this
      *
      * @throws \Illuminate\Http\Client\RequestException
      */
     public function throwIf($condition)
     {
-        return $condition ? $this->throw() : $this;
+        return value($condition, $this) ? $this->throw(func_get_args()[1] ?? null) : $this;
+    }
+
+    /**
+     * Throw an exception if the response status code matches the given code.
+     *
+     * @param  callable|int  $statusCode
+     * @return $this
+     *
+     * @throws \Illuminate\Http\Client\RequestException
+     */
+    public function throwIfStatus($statusCode)
+    {
+        if (is_callable($statusCode) &&
+            $statusCode($this->status(), $this)) {
+            return $this->throw();
+        }
+
+        return $this->status() === $statusCode ? $this->throw() : $this;
+    }
+
+    /**
+     * Throw an exception unless the response status code matches the given code.
+     *
+     * @param  callable|int  $statusCode
+     * @return $this
+     *
+     * @throws \Illuminate\Http\Client\RequestException
+     */
+    public function throwUnlessStatus($statusCode)
+    {
+        if (is_callable($statusCode)) {
+            return $statusCode($this->status(), $this) ? $this : $this->throw();
+        }
+
+        return $this->status() === $statusCode ? $this : $this->throw();
+    }
+
+    /**
+     * Throw an exception if the response status code is a 4xx level code.
+     *
+     * @return $this
+     *
+     * @throws \Illuminate\Http\Client\RequestException
+     */
+    public function throwIfClientError()
+    {
+        return $this->clientError() ? $this->throw() : $this;
+    }
+
+    /**
+     * Throw an exception if the response status code is a 5xx level code.
+     *
+     * @return $this
+     *
+     * @throws \Illuminate\Http\Client\RequestException
+     */
+    public function throwIfServerError()
+    {
+        return $this->serverError() ? $this->throw() : $this;
+    }
+
+    /**
+     * Dump the content from the response.
+     *
+     * @param  string|null  $key
+     * @return $this
+     */
+    public function dump($key = null)
+    {
+        $content = $this->body();
+
+        $json = json_decode($content);
+
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $content = $json;
+        }
+
+        if (! is_null($key)) {
+            dump(data_get($content, $key));
+        } else {
+            dump($content);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Dump the content from the response and end the script.
+     *
+     * @param  string|null  $key
+     * @return never
+     */
+    public function dd($key = null)
+    {
+        $this->dump($key);
+
+        exit(1);
+    }
+
+    /**
+     * Dump the headers from the response.
+     *
+     * @return $this
+     */
+    public function dumpHeaders()
+    {
+        dump($this->headers());
+
+        return $this;
+    }
+
+    /**
+     * Dump the headers from the response and end the script.
+     *
+     * @return never
+     */
+    public function ddHeaders()
+    {
+        $this->dumpHeaders();
+
+        exit(1);
     }
 
     /**
@@ -331,8 +464,7 @@ class Response implements ArrayAccess
      * @param  string  $offset
      * @return bool
      */
-    #[\ReturnTypeWillChange]
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return isset($this->json()[$offset]);
     }
@@ -343,8 +475,7 @@ class Response implements ArrayAccess
      * @param  string  $offset
      * @return mixed
      */
-    #[\ReturnTypeWillChange]
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return $this->json()[$offset];
     }
@@ -358,8 +489,7 @@ class Response implements ArrayAccess
      *
      * @throws \LogicException
      */
-    #[\ReturnTypeWillChange]
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         throw new LogicException('Response data may not be mutated using array access.');
     }
@@ -372,8 +502,7 @@ class Response implements ArrayAccess
      *
      * @throws \LogicException
      */
-    #[\ReturnTypeWillChange]
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         throw new LogicException('Response data may not be mutated using array access.');
     }

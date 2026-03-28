@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import '../css/register.css';
+import ApiClient from '../api';
 
 const Register: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    username: '',
     password: '',
     passwordConfirmation: ''
   });
@@ -16,7 +18,6 @@ const Register: React.FC = () => {
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
-    username?: string;
     password?: string;
     passwordConfirmation?: string;
   }>({});
@@ -45,12 +46,6 @@ const Register: React.FC = () => {
       newErrors.email = 'Please enter a valid email';
     }
     
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
-    }
-    
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -73,37 +68,30 @@ const Register: React.FC = () => {
     setError('');
     
     if (validate()) {
+      setLoading(true);
       try {
-        const response = await fetch('/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            name: formData.name,
-            email: formData.email,
-            username: formData.username,
-            password: formData.password, 
-            password_confirmation: formData.passwordConfirmation 
-          }),
-        });
+        const api = new ApiClient();
+        const response = await api.register(
+          formData.name,
+          formData.email,
+          formData.password,
+          formData.passwordConfirmation
+        );
 
-        if (response.ok) {
+        if (response.status === 'success') {
           setSuccess("Registration successful! Redirecting...");
           setError('');
-          setFormData({
-            name: '',
-            email: '',
-            username: '',
-            password: '',
-            passwordConfirmation: ''
-          });
+          // Redirect to profile after successful registration
+          setTimeout(() => navigate('/profile'), 1500);
         } else {
-          const data = await response.json();
-          setError(data.message || "Something went wrong!");
+          setError(response.message || "Something went wrong!");
           setSuccess('');
         }
-      } catch (err) {
-        setError("Network error! Please try again.");
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Registration failed! Please try again.");
         setSuccess('');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -165,7 +153,7 @@ const Register: React.FC = () => {
                 className={`form-group ${errors.name ? 'has-error' : ''}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35 }}
+                transition={{ delay: 0.3 }}
               >
                 <input
                   type="text"
@@ -185,7 +173,7 @@ const Register: React.FC = () => {
                 className={`form-group ${errors.email ? 'has-error' : ''}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.35 }}
               >
                 <input 
                   type="email"
@@ -202,30 +190,10 @@ const Register: React.FC = () => {
               </motion.div>
 
               <motion.div 
-                className={`form-group ${errors.username ? 'has-error' : ''}`}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.45 }}
-              >
-                <input 
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Choose a username"
-                  className={errors.username ? 'error' : ''}
-                  id="register-username"
-                />
-                <label htmlFor="register-username">Username</label>
-                <span className="input-icon">🧑</span>
-                {errors.username && <small className="error-text">{errors.username}</small>}
-              </motion.div>
-
-              <motion.div 
                 className={`form-group password-group ${errors.password ? 'has-error' : ''}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.45 }}
               >
                 <input 
                   type={showPassword ? "text" : "password"}
@@ -248,7 +216,7 @@ const Register: React.FC = () => {
                 className={`form-group password-group ${errors.passwordConfirmation ? 'has-error' : ''}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55 }}
+                transition={{ delay: 0.6 }}
               >
                 <input 
                   type={showConfirmPassword ? "text" : "password"}
@@ -270,13 +238,14 @@ const Register: React.FC = () => {
               <motion.button 
                 type="submit" 
                 className="btn-login"
+                disabled={loading}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
+                transition={{ delay: 0.7 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Register
+                {loading ? 'Registering...' : 'Register'}
               </motion.button>
             </form>
 
@@ -284,7 +253,7 @@ const Register: React.FC = () => {
               className="bottom-text"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.65 }}
+              transition={{ delay: 0.75 }}
             >
               <p>Already have an account? <Link to="/login">Login</Link></p>
               <Link to="/" className="back-home">← Back to Homepage</Link>
@@ -299,4 +268,3 @@ const Register: React.FC = () => {
 };
 
 export default Register;
-
