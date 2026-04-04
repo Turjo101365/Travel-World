@@ -13,9 +13,28 @@ class TourGuideController extends Controller
      *
      * @return JsonResponse
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $guides = TourGuide::all();
+        $location = trim((string) $request->query('location', ''));
+        $destinationId = $request->query('destination_id');
+        $destinationSlug = trim((string) $request->query('destination_slug', ''));
+
+        $guides = TourGuide::query()
+            ->with('destination:id,slug,title,country,city,location_label')
+            ->when($destinationId, function ($query) use ($destinationId) {
+                $query->where('destination_id', (int) $destinationId);
+            })
+            ->when($destinationSlug !== '', function ($query) use ($destinationSlug) {
+                $query->whereHas('destination', function ($destinationQuery) use ($destinationSlug) {
+                    $destinationQuery->where('slug', $destinationSlug);
+                });
+            })
+            ->when($location !== '', function ($query) use ($location) {
+                $query->where('location', 'like', '%' . $location . '%');
+            })
+            ->orderByDesc('rating')
+            ->orderByDesc('experience_years')
+            ->get();
         
         return response()->json([
             'status' => 'success',
@@ -31,7 +50,7 @@ class TourGuideController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $guide = TourGuide::find($id);
+        $guide = TourGuide::with('destination:id,slug,title,country,city,location_label')->find($id);
         
         if (!$guide) {
             return response()->json([
@@ -55,6 +74,7 @@ class TourGuideController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
+            'destination_id' => ['nullable', 'integer', 'exists:tour_destinations,id'],
             'name' => ['required', 'string', 'max:255'],
             'photo' => ['required', 'string'],
             'description' => ['required', 'string'],
@@ -95,6 +115,7 @@ class TourGuideController extends Controller
         }
 
         $request->validate([
+            'destination_id' => ['sometimes', 'nullable', 'integer', 'exists:tour_destinations,id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'photo' => ['sometimes', 'string'],
             'description' => ['sometimes', 'string'],

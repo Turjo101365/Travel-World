@@ -1,136 +1,150 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import '../css/tourguide.css';
 import ApiClient from '../api';
-
-interface Guide {
-  id: number;
-  name: string;
-  photo: string;
-  description: string;
-  rating: number;
-  location: string;
-  experience_years: number;
-  languages: string;
-  hire_cost?: number;
-  phone?: string;
-  email?: string;
-}
+import { TourDestinationSummary } from '../types/travel';
+import { buildAppUrl } from '../utils/app-url';
 
 const TourGuide: React.FC = () => {
-  const [guides, setGuides] = useState<Guide[]>([]);
+  const [destinations, setDestinations] = useState<TourDestinationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchGuides = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const api = new ApiClient();
-      const response = await api.getTourGuides();
-
-      if (response?.status === 'success' && Array.isArray(response?.data)) {
-        setGuides(response.data);
-        return;
-      }
-
-      setGuides([]);
-      setError(response?.message || 'Failed to load tour guides. Please try again.');
-    } catch (err) {
-      console.error('Error fetching tour guides:', err);
-      setGuides([]);
-      setError('Failed to load tour guides. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchGuides();
-  }, [fetchGuides]);
+    const fetchDestinations = async () => {
+      setLoading(true);
+      setError(null);
 
-  if (loading) {
-    return (
-      <div className="tourguide-page">
-        <div className="tourguide-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-          <div className="loading-message">Loading tour guides...</div>
-        </div>
-      </div>
-    );
-  }
+      try {
+        const api = new ApiClient();
+        const response = await api.getDestinations();
+
+        if (response?.status === 'success' && Array.isArray(response?.data)) {
+          setDestinations(response.data);
+          return;
+        }
+
+        setDestinations([]);
+        setError(response?.message || 'Failed to load destinations right now.');
+      } catch (err) {
+        console.error('Error fetching destinations:', err);
+        setDestinations([]);
+        setError('Failed to load destinations right now.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
 
   return (
     <div className="tourguide-page">
-      <div className="tourguide-container">
+      <section className="tourguide-hero">
+        <div className="tourguide-hero-overlay"></div>
+        <div className="tourguide-hero-content">
+          <span className="tourguide-eyebrow">Choose Your Destination</span>
+          <h1>5 Tour Places, Local Guides, Better Travel Decisions</h1>
+          <p>
+            Pick a destination first, then open a dedicated page for that place. Customers can
+            view the destination image, description, and the local guide list fetched directly
+            from the database.
+          </p>
 
-        {/* Left side: Branding / Info */}
-        <div className="tourguide-left">
-          <div className="brand-content">
-            <h1>Meet Our Tour Guides</h1>
-            <p>Explore destinations with the experts who know them best.</p>
+          <div className="tourguide-stats">
+            <div className="tourguide-stat-card">
+              <strong>{loading ? '...' : destinations.length}</strong>
+              <span>Tour Places</span>
+            </div>
+            <div className="tourguide-stat-card">
+              <strong>3+</strong>
+              <span>Guides Per Destination</span>
+            </div>
+            <div className="tourguide-stat-card">
+              <strong>DB</strong>
+              <span>Live Destination Data</span>
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Right side: Tour Guide Cards */}
-        <div className="tourguide-right">
-          <div className="cards-container">
-            {error ? (
-              <div className="error-state" style={{textAlign: 'center', padding: '4rem 2rem', color: '#dc3545' }}>
-                <h3>Error</h3>
-                <p>{error}</p>
-                <button
-                  type="button"
-                  className="btn-contact"
-                  onClick={fetchGuides}
-                  style={{ marginTop: '1rem', display: 'inline-block' }}
-                >
-                  Retry
-                </button>
-              </div>
-            ) : guides.length === 0 ? (
-              <div className="empty-state" style={{textAlign: 'center', padding: '4rem 2rem', color: '#666' }}>
-                <h3>No Tour Guides Available</h3>
-                <p>Populate database with seeder on backend.</p>
-              </div>
-            ) : (
-              guides.map((guide) => (
-                <div className="tour-card" key={guide.id}>
-                  <img 
-                    src={guide.photo || '/images/img.jpg'} 
-                    alt={guide.name}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/images/img.jpg';
-                    }}
-                  />
-                  <h3>{guide.name}</h3>
-                  <p>{guide.description}</p>
+      <section className="tourguide-destinations-section">
+        <div className="tourguide-section-heading">
+          <span className="section-tag">Destination Based Booking</span>
+          <h2>Select a Place, Then Open the Full Destination Page</h2>
+          <p>
+            Each card below opens a separate page where customers can see the destination details
+            and the available tour guides for that exact location.
+          </p>
+        </div>
 
-                  <div className="rating">
-                    {Array.from({ length: Math.max(0, Math.min(5, guide.rating || 0)) }).map((_, i) => (
-                      <span key={i}>⭐️</span>
-                    ))}
+        {error && (
+          <div className="tourguide-inline-alert">
+            <strong>Destination data could not be loaded.</strong>
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="destination-grid">
+          {loading ? (
+            Array.from({ length: 5 }).map((_, index) => (
+              <article className="destination-select-card" key={`loading-${index}`}>
+                <div className="destination-select-image"></div>
+                <div className="destination-select-body">
+                  <div className="destination-select-topline">
+                    <span>Loading</span>
+                    <span>...</span>
+                  </div>
+                  <h3>Loading destination...</h3>
+                  <p>Please wait while we load destination data from the database.</p>
+                </div>
+              </article>
+            ))
+          ) : destinations.length === 0 ? (
+            <div className="tourguide-preview-status">
+              <h4>No destinations found</h4>
+              <p>Run the destination and guide seeders so the page can show the database data.</p>
+            </div>
+          ) : (
+            destinations.map((destination) => (
+              <article className="destination-select-card" key={destination.id}>
+                <div className="destination-select-image">
+                  <img src={destination.image} alt={destination.title} />
+                  <div className="destination-select-badge">⭐ {destination.rating}</div>
+                </div>
+
+                <div className="destination-select-body">
+                  <div className="destination-select-topline">
+                    <span>{destination.country}</span>
+                    <span>{destination.duration}</span>
                   </div>
 
-                  <Link to={`/guide/${guide.id}`} className="btn-contact">
-                    Guide Details
-                  </Link>
+                  <h3>{destination.title}</h3>
+                  <p>{destination.short_description}</p>
+
+                  <div className="destination-select-meta">
+                    <span>📍 {destination.location_label}</span>
+                    <span>{destination.guides_count || 0} guide{destination.guides_count === 1 ? '' : 's'} available</span>
+                  </div>
+
+                  <div className="destination-select-actions">
+                    <a href={buildAppUrl(`/destinations/${destination.slug}`)} className="btn-contact">
+                      View Destination
+                    </a>
+                    <span className="destination-price">{destination.price}</span>
+                  </div>
                 </div>
-              ))
-            )}
-          </div>
+              </article>
+            ))
+          )}
         </div>
+      </section>
 
-      </div>
-
-      {/* Footer */}
       <footer className="footer">
         <div className="footer-wrapper">
-
           <div className="footer-box">
             <h2 className="footer-logo">TRAVEL<span>WORLD</span></h2>
-            <p>It's time to travel the world</p>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+            <p>Pick the right place. Meet the right guide. Travel with confidence.</p>
+            <p>Destination-first planning helps customers compare guides with real local context.</p>
 
             <div className="footer-social">
               <a href="#">Y</a>
@@ -141,32 +155,31 @@ const TourGuide: React.FC = () => {
           </div>
 
           <div className="footer-box">
-            <h3>Discover</h3>
+            <h3>Destinations</h3>
             <ul>
-              <li>Home</li>
-              <li>About</li>
-              <li>Tours</li>
+              <li>Paris</li>
+              <li>Tokyo</li>
+              <li>Cape Town</li>
             </ul>
           </div>
 
           <div className="footer-box">
-            <h3>Quick Links</h3>
+            <h3>Guide Flow</h3>
             <ul>
-              <li>Gallery</li>
-              <li>Login</li>
-              <li>Register</li>
+              <li>Choose a place</li>
+              <li>Compare local guides</li>
+              <li>Select and book</li>
             </ul>
           </div>
 
           <div className="footer-box">
-            <h3>Contact</h3>
+            <h3>Support</h3>
             <ul>
-              <li>📍 Address : Lorem</li>
-              <li>📧 Email : xyz@mail.com</li>
-              <li>📞 Phone : 00022200222</li>
+              <li>📍 Travel planning support</li>
+              <li>📧 support@travelworld.com</li>
+              <li>📞 +880 1700 000000</li>
             </ul>
           </div>
-
         </div>
 
         <div className="footer-bottom">

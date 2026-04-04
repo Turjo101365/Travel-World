@@ -109,9 +109,11 @@ php artisan migrate --seed
 ```
 5. **Run the application:**  
 ```bash
-php artisan serve
-npm run dev
+npm run start:server
+npm run start:client
 ```
 6. **Access the app:**  
-Open `http://localhost:8000` in your browser
+Open `http://localhost:5173` in your browser
+
+The backend API runs at `http://127.0.0.1:8080`, which matches the client `VITE_BACKEND_ENDPOINT` configuration.
 ---
