@@ -7,6 +7,7 @@ use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PasswordResetCodeController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\TourDestinationController;
 use App\Http\Controllers\TourGuideController;
 
 /*
@@ -27,6 +28,8 @@ Route::post('/forgot-password', [PasswordResetCodeController::class, 'sendCode']
 Route::post('/reset-password', [PasswordResetCodeController::class, 'reset']);
 
 // Tour Guide routes (public - read only)
+Route::get('/destinations', [TourDestinationController::class, 'index']);
+Route::get('/destinations/{slug}', [TourDestinationController::class, 'show']);
 Route::get('/tour-guides', [TourGuideController::class, 'index']);
 Route::get('/tour-guides/{id}', [TourGuideController::class, 'show']);
 

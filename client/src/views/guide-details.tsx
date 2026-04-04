@@ -101,7 +101,7 @@ const GuideDetails: React.FC = () => {
             <h2>{error || 'Guide not found'}</h2>
             <p>We could not load this tour guide profile right now.</p>
             <Link to="/tourguide" className="guide-btn secondary">
-              Back to Tour Guides
+              Back to Destinations
             </Link>
           </div>
         </div>
@@ -114,7 +114,7 @@ const GuideDetails: React.FC = () => {
       <div className="guide-details-shell">
         <div className="guide-page-actions">
           <Link to="/tourguide" className="guide-back-link">
-            ← Back to Tour Guides
+            ← Back to Destinations
           </Link>
         </div>
 
@@ -247,7 +247,7 @@ const GuideDetails: React.FC = () => {
           </section>
 
           <div className="guide-footer-note">
-            Looking for a different style of guide? <Link to="/tourguide">Browse all guides</Link>
+            Looking for another destination or local expert? <Link to="/tourguide">Browse all destinations</Link>
           </div>
         </article>
       </div>

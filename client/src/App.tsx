@@ -6,6 +6,7 @@ import Register from './views/register';
 import Contact from './views/contact';
 import TourGuide from './views/tourguide';
 import GuideDetails from './views/guide-details';
+import DestinationDetails from './views/destination-details';
 import ResetPassword from './views/reset-password';
 import ForgotPassword from './views/forgot-password';
 import Profile from './views/profile';
@@ -31,6 +32,7 @@ function App() {
       location.pathname === '/reset-password' ||
       location.pathname === '/profile' ||
       location.pathname.startsWith('/payment/') ||
+      location.pathname.startsWith('/destinations/') ||
       location.pathname.startsWith('/guide/')
     ) {
       setNavbarTheme('dark');
@@ -51,6 +53,7 @@ function App() {
         <Route path="/signup" element={<Register />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/tourguide" element={<TourGuide />} />
+        <Route path="/destinations/:slug" element={<DestinationDetails />} />
         <Route path="/guide/:id" element={<GuideDetails />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

@@ -262,9 +262,9 @@ class ApiClient {
   }
 
   // Tour Guide methods
-  async getTourGuides() {
+  async getTourGuides(params?: { location?: string }) {
     try {
-      const response = await this.client.get('/api/tour-guides');
+      const response = await this.client.get('/api/tour-guides', { params });
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -275,6 +275,26 @@ class ApiClient {
   async getTourGuide(id: number | string) {
     try {
       const response = await this.client.get(`/api/tour-guides/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return { status: 'error', data: null };
+    }
+  }
+
+  async getDestinations() {
+    try {
+      const response = await this.client.get('/api/destinations');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return { status: 'error', data: [] };
+    }
+  }
+
+  async getDestination(slug: string) {
+    try {
+      const response = await this.client.get(`/api/destinations/${slug}`);
       return response.data;
     } catch (error) {
       this.handleError(error);

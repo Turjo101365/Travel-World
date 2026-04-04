@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import '../css/home.css';
+import ApiClient from '../api';
+import { TourDestinationSummary } from '../types/travel';
+import { buildAppUrl } from '../utils/app-url';
 
 // Animation variants
 const fadeUp = {
@@ -43,6 +46,7 @@ const scaleIn = {
 const Home: React.FC = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [popularDestinations, setPopularDestinations] = useState<TourDestinationSummary[]>([]);
 
   // Gallery images
   const galleryImages = [
@@ -76,46 +80,6 @@ const Home: React.FC = () => {
       title: "Paris Lights",
       location: "France",
     },
-  ];
-
-  // Popular destinations data
-  const popularDestinations = [
-    {
-      id: 1,
-      src: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=600&q=80",
-      title: "Bali Paradise",
-      country: "Indonesia",
-      price: "$1,299",
-      duration: "7 Days",
-      rating: 4.9
-    },
-    {
-      id: 2,
-      src: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&q=80",
-      title: "Tokyo Adventure",
-      country: "Japan",
-      price: "$2,499",
-      duration: "10 Days",
-      rating: 4.8
-    },
-    {
-      id: 3,
-      src: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=600&q=80",
-      title: "Dubai Luxury",
-      country: "UAE",
-      price: "$3,199",
-      duration: "5 Days",
-      rating: 4.9
-    },
-    {
-      id: 4,
-      src: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=600&q=80",
-      title: "Venice Dreams",
-      country: "Italy",
-      price: "$2,799",
-      duration: "8 Days",
-      rating: 4.7
-    }
   ];
 
   // Why choose us data
@@ -188,6 +152,23 @@ const Home: React.FC = () => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const api = new ApiClient();
+        const response = await api.getDestinations();
+
+        if (response?.status === 'success' && Array.isArray(response?.data)) {
+          setPopularDestinations(response.data.slice(0, 5));
+        }
+      } catch (error) {
+        console.error('Failed to load destinations on home page:', error);
+      }
+    };
+
+    fetchDestinations();
   }, []);
 
   return (
@@ -397,7 +378,7 @@ const Home: React.FC = () => {
             >
               <span className="subtitle">Explore</span>
               <h2>Popular <span className="accent">Destinations</span></h2>
-              <p className="lead">Discover our most sought-after travel packages</p>
+              <p className="lead">Choose from 5 curated destinations and meet local guides for each place</p>
             </motion.div>
             
             <div className="destinations-grid">
@@ -412,7 +393,7 @@ const Home: React.FC = () => {
                   whileHover={{ y: -15 }}
                 >
                   <div className="destination-image">
-                    <img src={dest.src} alt={dest.title} loading="lazy" />
+                    <img src={dest.image} alt={dest.title} loading="lazy" />
                     <div className="destination-overlay">
                       <span className="rating">⭐ {dest.rating}</span>
                     </div>
@@ -424,7 +405,7 @@ const Home: React.FC = () => {
                       <span className="duration">🕐 {dest.duration}</span>
                       <span className="price">{dest.price}</span>
                     </div>
-                    <Link to="/tourguide" className="btn-destination">Book Now</Link>
+                    <a href={buildAppUrl(`/destinations/${dest.slug}`)} className="btn-destination">Explore Place</a>
                   </div>
                 </motion.div>
               ))}
@@ -619,4 +600,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-
