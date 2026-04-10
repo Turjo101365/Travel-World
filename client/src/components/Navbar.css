@@ -165,6 +165,10 @@
   border-radius: 8px;
 }
 
+.navbar-links li .admin-logout-btn {
+  border: none;
+}
+
 /* Unique color for each navigation link - Base state */
 /* Home Link */
 .navbar-links li a.home-link {
@@ -194,6 +198,11 @@
 .navbar-links li a.login-link {
   background: var(--nav-login-bg);
   color: var(--nav-login-color);
+}
+
+.navbar-links li a.admin-link {
+  background: rgba(32, 201, 151, 0.15);
+  color: #68f0c1;
 }
 
 /* Hover effects - enhanced with glow and shadow */
@@ -235,6 +244,14 @@
   color: var(--nav-login-hover);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+}
+
+.navbar-links li a.admin-link:hover,
+.navbar-links li a.admin-link.active {
+  background: rgba(32, 201, 151, 0.28);
+  color: #8bffd9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(32, 201, 151, 0.35);
 }
 
 /* Click effect - temporarily change to default/normal color */
@@ -292,6 +309,48 @@
 /* Login link */
 .login-link a {
   opacity: 0.9;
+}
+
+.admin-profile-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-profile-chip span {
+  color: var(--nav-text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.admin-profile-chip strong {
+  color: var(--nav-text-light);
+  font-size: 0.9rem;
+}
+
+.admin-logout-btn {
+  background: linear-gradient(135deg, #ff8a65, #ff7043);
+  color: #0a1628;
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(255, 112, 67, 0.35);
+  cursor: pointer;
+  transition: var(--nav-transition);
+  font-family: inherit;
+}
+
+.admin-logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 112, 67, 0.5);
+}
+
+.mobile-admin-logout {
+  width: 100%;
 }
 
 /* Register Button - Special styling with unique color */
@@ -646,4 +705,3 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
-

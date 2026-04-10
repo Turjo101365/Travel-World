@@ -84,6 +84,24 @@ const PaymentIntegration: React.FC = () => {
   );
 
   const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatVoucherDate = (value?: string) => {
+    if (!value) {
+      return 'Just now';
+    }
+
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return value;
+    }
+
+    return parsedDate.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
 
   const handleDaysChange = (value: string) => {
     const parsedValue = Number(value);
@@ -186,6 +204,80 @@ const PaymentIntegration: React.FC = () => {
     );
   }
 
+  if (paymentResult) {
+    return (
+      <div className="payment-container">
+        <div className="payment-card voucher-card">
+          <div className="voucher-header">
+            <span className="voucher-badge">Payment Complete</span>
+            <h2>Your Travel Voucher</h2>
+            <p className="subtitle">
+              Booking confirmed for <strong>{user?.name || 'Traveler'}</strong>
+            </p>
+          </div>
+
+          <div className="voucher-hero">
+            <div>
+              <p className="voucher-label">Tour Guide</p>
+              <h3>{guide.name}</h3>
+              <p>{guide.location}</p>
+            </div>
+            <div className="voucher-stamp">Confirmed</div>
+          </div>
+
+          <div className="voucher-grid">
+            <div className="voucher-item">
+              <span>Transaction ID</span>
+              <strong>{paymentResult.transaction_id}</strong>
+            </div>
+            <div className="voucher-item">
+              <span>Paid On</span>
+              <strong>{formatVoucherDate(paymentResult.paid_at)}</strong>
+            </div>
+            <div className="voucher-item">
+              <span>Duration</span>
+              <strong>
+                {paymentResult.days} day{paymentResult.days === 1 ? '' : 's'}
+              </strong>
+            </div>
+            <div className="voucher-item">
+              <span>Daily Rate</span>
+              <strong>{formatCurrency(hireCostPerDay)}</strong>
+            </div>
+            <div className="voucher-item">
+              <span>Payment Method</span>
+              <strong>
+                {paymentResult.card_brand || 'Card'} ending in {paymentResult.card_last_four}
+              </strong>
+            </div>
+            <div className="voucher-item total">
+              <span>Total Paid</span>
+              <strong>
+                {paymentResult.currency} {paymentResult.amount}
+              </strong>
+            </div>
+          </div>
+
+          <div className="voucher-note">
+            <p>
+              Present this voucher and transaction reference during your guide handoff or support
+              inquiry.
+            </p>
+          </div>
+
+          <div className="voucher-actions">
+            <Link to="/profile" className="btn-pay voucher-secondary-btn">
+              View My Profile
+            </Link>
+            <Link to="/tourguide" className="btn-pay voucher-secondary-btn">
+              Back to Tour Guides
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="payment-container">
       <div className="payment-card">
@@ -211,21 +303,6 @@ const PaymentIntegration: React.FC = () => {
             <strong>Total:</strong> {formatCurrency(totalAmount)}
           </p>
         </div>
-
-        {paymentResult ? (
-          <div className="alert success">
-            <p>
-              <strong>Payment successful.</strong>
-            </p>
-            <p>Transaction: {paymentResult.transaction_id}</p>
-            <p>
-              Charged: {paymentResult.currency} {paymentResult.amount}
-            </p>
-            <p>
-              Card: {paymentResult.card_brand || 'Card'} ending in {paymentResult.card_last_four}
-            </p>
-          </div>
-        ) : null}
 
         {submitError ? <div className="alert error">{submitError}</div> : null}
 

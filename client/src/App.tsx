@@ -13,6 +13,8 @@ import Profile from './views/profile';
 import Navbar from './components/Navbar';
 import PaymentIntegration from './views/PaymentIntegration';
 import ProtectedRoute from './ProtectedRoute';  
+import AdminRoute from './AdminRoute';
+import AdminDashboard from './views/AdminDashboard';
 
 import { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
@@ -31,6 +33,7 @@ function App() {
       location.pathname === '/forgot-password' ||
       location.pathname === '/reset-password' ||
       location.pathname === '/profile' ||
+      location.pathname.startsWith('/admin') ||
       location.pathname.startsWith('/payment/') ||
       location.pathname.startsWith('/destinations/') ||
       location.pathname.startsWith('/guide/')
@@ -60,6 +63,9 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/payment/:guideId" element={<PaymentIntegration />} />
+        </Route>
+        <Route element={<AdminRoute />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Route>
       </Routes>
 

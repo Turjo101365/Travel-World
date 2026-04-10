@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import axios from 'axios';
 import '../css/login.css';
 import ApiClient from '../api';
-import { secrets } from '../secrets';
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,6 +18,14 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!ApiClient.isAuthenticated()) {
+      return;
+    }
+
+    navigate(ApiClient.isSuperAdmin() ? '/admin/dashboard' : '/profile', { replace: true });
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -57,17 +63,11 @@ const Login: React.FC = () => {
     if (validate()) {
       setLoading(true);
       try {
-        const endpoint = `${secrets.backendEndpoint.replace(/\/+$/, '')}/api/login`;
-        const response = await axios.post(endpoint, {
-          email: formData.email.trim(),
-          password: formData.password,
-        });
+        const api = new ApiClient();
+        const data = await api.login(formData.email.trim(), formData.password);
 
-        const data = response.data;
         if (data?.status === 'success' && data?.authorisation?.token) {
-          ApiClient.setToken(data.authorisation.token);
-          ApiClient.setUser(data.user);
-          navigate('/profile', { replace: true });
+          navigate(data?.user?.is_super_admin ? '/admin/dashboard' : '/profile', { replace: true });
           return;
         }
         setError(data?.message || 'Login failed. Please try again.');
@@ -79,10 +79,7 @@ const Login: React.FC = () => {
           const firstError = validationErrors ? Object.values(validationErrors)[0]?.[0] : null;
           setError(firstError || err?.response?.data?.message || 'Please check your input.');
         } else {
-          setError(
-            err?.response?.data?.message ||
-              `Cannot connect to server at ${secrets.backendEndpoint}. Please try again.`
-          );
+          setError(err?.response?.data?.message || 'Cannot connect to the backend server. Please try again.');
         }
       } finally {
         setLoading(false);

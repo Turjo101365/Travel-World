@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 
 interface RetriableRequestConfig extends AxiosRequestConfig {
   __triedBaseUrls?: string[];
+  _skipGlobal401Handler?: boolean;
 }
 
 class ApiClient {
@@ -12,10 +13,10 @@ class ApiClient {
   private static userKey = 'user_data';
   private configuredBaseUrl: string;
   private static localFallbackBaseUrls = [
-    'http://127.0.0.1:8080',
-    'http://localhost:8080',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'http://127.0.0.1:8080',
+    'http://localhost:8080',
   ];
   private baseUrlCandidates: string[];
 
@@ -55,6 +56,10 @@ class ApiClient {
         }
 
         if (error.response?.status === 401) {
+          if (requestConfig?._skipGlobal401Handler) {
+            return Promise.reject(error);
+          }
+
           ApiClient.logout();
           toast.error('Session expired. Please login again.');
           window.location.href = '/login';
@@ -142,10 +147,25 @@ class ApiClient {
     return !!this.getToken();
   }
 
+  static isSuperAdmin(): boolean {
+    return !!this.getUser()?.is_super_admin;
+  }
+
   // Auth methods
   async login(email: string, password: string) {
     try {
-      const response = await this.client.post('/api/login', { email, password });
+      // Clear any previous local session so account switching is reliable.
+      ApiClient.logout();
+
+      const requestConfig: RetriableRequestConfig = {
+        _skipGlobal401Handler: true,
+      };
+
+      const response = await this.client.post(
+        '/api/login',
+        { email, password },
+        requestConfig
+      );
       if (response.data.status === 'success') {
         ApiClient.setToken(response.data.authorisation.token);
         ApiClient.setUser(response.data.user);
@@ -159,12 +179,22 @@ class ApiClient {
 
   async register(name: string, email: string, password: string, password_confirmation: string) {
     try {
-      const response = await this.client.post('/api/register', {
-        name,
-        email,
-        password,
-        password_confirmation,
-      });
+      ApiClient.logout();
+
+      const requestConfig: RetriableRequestConfig = {
+        _skipGlobal401Handler: true,
+      };
+
+      const response = await this.client.post(
+        '/api/register',
+        {
+          name,
+          email,
+          password,
+          password_confirmation,
+        },
+        requestConfig
+      );
       if (response.data.status === 'success') {
         ApiClient.setToken(response.data.authorisation.token);
         ApiClient.setUser(response.data.user);
@@ -177,12 +207,26 @@ class ApiClient {
   }
 
   async logout() {
+    const activeToken = ApiClient.getToken();
+    ApiClient.logout();
+
     try {
-      await this.client.post('/api/logout');
+      if (activeToken) {
+        const requestConfig: RetriableRequestConfig = {
+          headers: {
+            Authorization: `Bearer ${activeToken}`,
+          },
+          _skipGlobal401Handler: true,
+        };
+
+        await this.client.post(
+          '/api/logout',
+          {},
+          requestConfig
+        );
+      }
     } catch (error) {
       // Ignore logout errors
-    } finally {
-      ApiClient.logout();
     }
   }
 
@@ -366,6 +410,36 @@ class ApiClient {
   async getPayments() {
     try {
       const response = await this.client.get('/api/payments');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return { status: 'error', data: [] };
+    }
+  }
+
+  async getAdminUsers() {
+    try {
+      const response = await this.client.get('/api/admin/users');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return { status: 'error', data: [] };
+    }
+  }
+
+  async getAdminBookings() {
+    try {
+      const response = await this.client.get('/api/admin/bookings');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      return { status: 'error', data: [] };
+    }
+  }
+
+  async getAdminPayments() {
+    try {
+      const response = await this.client.get('/api/admin/payments');
       return response.data;
     } catch (error) {
       this.handleError(error);
