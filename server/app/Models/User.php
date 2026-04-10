@@ -54,6 +54,7 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $appends = [
         'profile_photo_url',
+        'is_super_admin',
     ];
 
     /**
@@ -74,6 +75,31 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    /**
+     * Determine whether the user matches the fixed super admin account.
+     *
+     * @return bool
+     */
+    public function isSuperAdmin(): bool
+    {
+        $superAdminEmail = (string) env('SUPER_ADMIN_EMAIL', 'admin@travelworld.com');
+        if ($superAdminEmail === '') {
+            return false;
+        }
+
+        return strcasecmp((string) $this->email, $superAdminEmail) === 0;
+    }
+
+    /**
+     * Append a frontend-friendly admin flag.
+     *
+     * @return bool
+     */
+    public function getIsSuperAdminAttribute(): bool
+    {
+        return $this->isSuperAdmin();
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\PaymentController;
@@ -61,4 +62,11 @@ Route::middleware(['auth:api', 'check.admin'])->group(function () {
     Route::post('/session', [SessionController::class, 'createSession']);
     Route::put('/session', [SessionController::class, 'updateSession']);
     Route::post('/sessions', [SessionController::class, 'viewSessions']);
+});
+
+// Super Admin dashboard routes
+Route::middleware(['auth:api', 'super.admin'])->prefix('admin')->group(function () {
+    Route::get('/users', [AdminDashboardController::class, 'users']);
+    Route::get('/bookings', [AdminDashboardController::class, 'bookings']);
+    Route::get('/payments', [AdminDashboardController::class, 'payments']);
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import ApiClient from '../api';
 import './Navbar.css';
 
 interface NavbarProps {
@@ -12,6 +13,10 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
   const [scrolled, setScrolled] = useState(false);
   const [clickedLink, setClickedLink] = useState<string | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const user = ApiClient.getUser();
+  const isAuthenticated = ApiClient.isAuthenticated();
+  const isSuperAdmin = ApiClient.isSuperAdmin();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,6 +52,12 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
     { name: 'Contact', path: '/contact', className: 'contact-link' },
   ];
 
+  const handleLogout = async () => {
+    const api = new ApiClient();
+    await api.logout();
+    navigate('/login', { replace: true });
+  };
+
   const navbarClass = `modern-navbar ${scrolled ? 'scrolled' : ''} ${theme === 'about' ? 'theme-about' : ''} ${theme === 'dark' ? 'theme-dark' : ''}`;
 
   return (
@@ -63,7 +74,7 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.2 }}
         >
-          <Link to="/">
+          <Link to={isSuperAdmin ? '/admin/dashboard' : '/'}>
             <span className="logo-icon">🌍</span>
             <span className="logo-text">
               <span className="logo-travel">Travel</span>
@@ -74,6 +85,42 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
 
         {/* Desktop Navigation */}
         <ul className="navbar-links">
+          {isSuperAdmin ? (
+            <>
+              <motion.li
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              >
+                <Link
+                  to="/admin/dashboard"
+                  className={`admin-link ${location.pathname.startsWith('/admin') ? 'active' : ''}`}
+                  onClick={() => handleLinkClick('Admin Dashboard')}
+                >
+                  Admin Dashboard
+                </Link>
+              </motion.li>
+              <motion.li
+                className="admin-profile-chip"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                <span>Super Admin</span>
+                <strong>{user?.name || 'Travel World Super Admin'}</strong>
+              </motion.li>
+              <motion.li
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                <button type="button" className="admin-logout-btn" onClick={handleLogout}>
+                  Logout
+                </button>
+              </motion.li>
+            </>
+          ) : (
+            <>
           {navLinks.map((link, index) => (
             <motion.li
               key={link.name}
@@ -91,33 +138,37 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
               </Link>
             </motion.li>
           ))}
-          <motion.li
-            className="login-link"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
-          >
-            <Link 
-              to="/login" 
-              className={`login-link ${clickedLink === 'Login' ? 'clicked' : ''}`}
-              onClick={() => handleLinkClick('Login')}
-            >
-              Login
-            </Link>
-          </motion.li>
-          <motion.li
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.6 }}
-          >
-            <Link 
-              to="/signup" 
-              className={`register-btn ${clickedLink === 'Register' ? 'clicked' : ''}`}
-              onClick={() => handleLinkClick('Register')}
-            >
-              Register
-            </Link>
-          </motion.li>
+          {!isAuthenticated ? (
+            <>
+              <motion.li
+                className="login-link"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
+              >
+                <Link 
+                  to="/login" 
+                  className={`login-link ${clickedLink === 'Login' ? 'clicked' : ''}`}
+                  onClick={() => handleLinkClick('Login')}
+                >
+                  Login
+                </Link>
+              </motion.li>
+              <motion.li
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+              >
+                <Link 
+                  to="/signup" 
+                  className={`register-btn ${clickedLink === 'Register' ? 'clicked' : ''}`}
+                  onClick={() => handleLinkClick('Register')}
+                >
+                  Register
+                </Link>
+              </motion.li>
+            </>
+          ) : null}
           <motion.li
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -131,6 +182,8 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
               👤 Profile
             </Link>
           </motion.li>
+            </>
+          )}
         </ul>
 
         {/* Mobile Hamburger */}
@@ -158,6 +211,29 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
             transition={{ duration: 0.3 }}
           >
             <ul className="mobile-links">
+              {isSuperAdmin ? (
+                <>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <Link to="/admin/dashboard" className="admin-link" onClick={() => handleLinkClick('Admin Dashboard')}>
+                      Admin Dashboard
+                    </Link>
+                  </motion.li>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <button type="button" className="admin-logout-btn mobile-admin-logout" onClick={handleLogout}>
+                      Logout
+                    </button>
+                  </motion.li>
+                </>
+              ) : (
+                <>
               {navLinks.map((link, index) => (
                 <motion.li
                   key={link.name}
@@ -174,32 +250,36 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
                   </Link>
                 </motion.li>
               ))}
-              <motion.li
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Link 
-                  to="/login" 
-                  className="login-link"
-                  onClick={() => handleLinkClick('Login')}
-                >
-                  Login
-                </Link>
-              </motion.li>
-              <motion.li
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <Link 
-                  to="/signup" 
-                  className="register-btn"
-                  onClick={() => handleLinkClick('Register')}
-                >
-                  Register
-                </Link>
-              </motion.li>
+              {!isAuthenticated ? (
+                <>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <Link 
+                      to="/login" 
+                      className="login-link"
+                      onClick={() => handleLinkClick('Login')}
+                    >
+                      Login
+                    </Link>
+                  </motion.li>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <Link 
+                      to="/signup" 
+                      className="register-btn"
+                      onClick={() => handleLinkClick('Register')}
+                    >
+                      Register
+                    </Link>
+                  </motion.li>
+                </>
+              ) : null}
               <motion.li
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -213,6 +293,8 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
                   👤 Profile
                 </Link>
               </motion.li>
+                </>
+              )}
             </ul>
           </motion.div>
         )}
@@ -222,4 +304,3 @@ const Navbar: React.FC<NavbarProps> = ({ theme = 'default' }) => {
 };
 
 export default Navbar;
-

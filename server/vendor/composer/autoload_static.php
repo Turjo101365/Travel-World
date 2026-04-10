@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5
+class ComposerStaticInitc94852979de25cdfd63da2ebb053fc0a
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -513,14 +513,20 @@ class ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5
     public static $classMap = array (
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
+        'App\\Http\\Controllers\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AuthController.php',
         'App\\Http\\Controllers\\Auth\\AuthenticatedSessionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/AuthenticatedSessionController.php',
         'App\\Http\\Controllers\\Auth\\EmailVerificationNotificationController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/EmailVerificationNotificationController.php',
         'App\\Http\\Controllers\\Auth\\NewPasswordController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/NewPasswordController.php',
         'App\\Http\\Controllers\\Auth\\PasswordResetLinkController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/PasswordResetLinkController.php',
         'App\\Http\\Controllers\\Auth\\RegisteredUserController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/RegisteredUserController.php',
         'App\\Http\\Controllers\\Auth\\VerifyEmailController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/VerifyEmailController.php',
+        'App\\Http\\Controllers\\ContactMessageController' => __DIR__ . '/../..' . '/app/Http/Controllers/ContactMessageController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
+        'App\\Http\\Controllers\\PasswordResetCodeController' => __DIR__ . '/../..' . '/app/Http/Controllers/PasswordResetCodeController.php',
+        'App\\Http\\Controllers\\PaymentController' => __DIR__ . '/../..' . '/app/Http/Controllers/PaymentController.php',
         'App\\Http\\Controllers\\SessionController' => __DIR__ . '/../..' . '/app/Http/Controllers/SessionController.php',
+        'App\\Http\\Controllers\\TourDestinationController' => __DIR__ . '/../..' . '/app/Http/Controllers/TourDestinationController.php',
+        'App\\Http\\Controllers\\TourGuideController' => __DIR__ . '/../..' . '/app/Http/Controllers/TourGuideController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
         'App\\Http\\Middleware\\CheckAdminCredentials' => __DIR__ . '/../..' . '/app/Http/Middleware/CheckAdminCredentials.php',
@@ -533,8 +539,13 @@ class ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5
         'App\\Http\\Middleware\\TrustProxies' => __DIR__ . '/../..' . '/app/Http/Middleware/TrustProxies.php',
         'App\\Http\\Middleware\\VerifyCsrfToken' => __DIR__ . '/../..' . '/app/Http/Middleware/VerifyCsrfToken.php',
         'App\\Http\\Requests\\Auth\\LoginRequest' => __DIR__ . '/../..' . '/app/Http/Requests/Auth/LoginRequest.php',
+        'App\\Mail\\PasswordResetCodeMail' => __DIR__ . '/../..' . '/app/Mail/PasswordResetCodeMail.php',
         'App\\Models\\Attendance' => __DIR__ . '/../..' . '/app/Models/Attendance.php',
+        'App\\Models\\ContactMessage' => __DIR__ . '/../..' . '/app/Models/ContactMessage.php',
+        'App\\Models\\Payment' => __DIR__ . '/../..' . '/app/Models/Payment.php',
         'App\\Models\\Session' => __DIR__ . '/../..' . '/app/Models/Session.php',
+        'App\\Models\\TourDestination' => __DIR__ . '/../..' . '/app/Models/TourDestination.php',
+        'App\\Models\\TourGuide' => __DIR__ . '/../..' . '/app/Models/TourGuide.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\AuthServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AuthServiceProvider.php',
@@ -664,6 +675,9 @@ class ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5
         'Cron\\HoursField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/HoursField.php',
         'Cron\\MinutesField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/MinutesField.php',
         'Cron\\MonthField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/MonthField.php',
+        'Database\\Seeders\\DatabaseSeeder' => __DIR__ . '/../..' . '/database/seeders/DatabaseSeeder.php',
+        'Database\\Seeders\\TourDestinationSeeder' => __DIR__ . '/../..' . '/database/seeders/TourDestinationSeeder.php',
+        'Database\\Seeders\\TourGuideSeeder' => __DIR__ . '/../..' . '/database/seeders/TourGuideSeeder.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
         'DateInvalidOperationException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateInvalidOperationException.php',
@@ -6940,9 +6954,9 @@ class ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitd201cc9ec3f3252e9e4c735af7e4f8d5::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitc94852979de25cdfd63da2ebb053fc0a::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitc94852979de25cdfd63da2ebb053fc0a::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitc94852979de25cdfd63da2ebb053fc0a::$classMap;
 
         }, null, ClassLoader::class);
     }

@@ -29,7 +29,8 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => bcrypt($request->password),
+            // Password is hashed by the User model mutator.
+            'password' => $request->password,
         ]);
 
         $token = Auth::login($user);
@@ -58,7 +59,17 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $credentials = $request->only('email', 'password');
+        $email = trim((string) $request->input('email'));
+        $password = (string) $request->input('password');
+
+        if ($this->isSuperAdminEmail($email)) {
+            return $this->loginSuperAdmin($email, $password);
+        }
+
+        $credentials = [
+            'email' => $email,
+            'password' => $password,
+        ];
 
         if (!$token = Auth::attempt($credentials)) {
             return response()->json([
@@ -76,6 +87,65 @@ class AuthController extends Controller
                 'type' => 'bearer',
             ]
         ]);
+    }
+
+    /**
+     * Login the fixed super admin account using environment credentials.
+     *
+     * @param string $email
+     * @param string $password
+     * @return JsonResponse
+     */
+    private function loginSuperAdmin(string $email, string $password): JsonResponse
+    {
+        $configuredPassword = (string) env('SUPER_ADMIN_PASSWORD', 'travelworld-admin-2026');
+
+        if ($configuredPassword === '' || !hash_equals($configuredPassword, $password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid credentials',
+            ], 401);
+        }
+
+        $superAdmin = User::firstOrCreate(
+            ['email' => $email],
+            [
+                'name' => (string) env('SUPER_ADMIN_NAME', 'Travel World Super Admin'),
+                'password' => $password,
+            ]
+        );
+
+        $superAdmin->name = (string) env('SUPER_ADMIN_NAME', 'Travel World Super Admin');
+        $superAdmin->password = $password;
+        $superAdmin->save();
+
+        $token = Auth::login($superAdmin);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Login successful',
+            'user' => $superAdmin,
+            'authorisation' => [
+                'token' => $token,
+                'type' => 'bearer',
+            ]
+        ]);
+    }
+
+    /**
+     * Determine whether the attempted email belongs to the fixed super admin account.
+     *
+     * @param string $email
+     * @return bool
+     */
+    private function isSuperAdminEmail(string $email): bool
+    {
+        $superAdminEmail = (string) env('SUPER_ADMIN_EMAIL', 'admin@travelworld.com');
+        if ($superAdminEmail === '') {
+            return false;
+        }
+
+        return strcasecmp($email, $superAdminEmail) === 0;
     }
 
     /**
