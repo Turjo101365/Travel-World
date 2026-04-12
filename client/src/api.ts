@@ -12,12 +12,14 @@ class ApiClient {
   private static tokenKey = 'jwt_token';
   private static userKey = 'user_data';
   private configuredBaseUrl: string;
-  private static localFallbackBaseUrls = [
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'http://127.0.0.1:8080',
-    'http://localhost:8080',
-  ];
+  private static localFallbackBaseUrls = import.meta.env.DEV
+    ? [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://127.0.0.1:8080',
+        'http://localhost:8080',
+      ]
+    : [];
   private baseUrlCandidates: string[];
 
   constructor() {
