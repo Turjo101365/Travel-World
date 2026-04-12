@@ -62,6 +62,9 @@ WORKDIR /var/www/html
 # Remove any existing vendor directory to avoid conflicts
 RUN rm -rf vendor
 
+# Clear composer cache
+RUN composer clear-cache
+
 # Install Laravel dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
