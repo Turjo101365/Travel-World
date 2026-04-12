@@ -59,6 +59,9 @@ COPY client/ /var/www/html/client
 # Set working directory
 WORKDIR /var/www/html
 
+# Remove any existing vendor directory to avoid conflicts
+RUN rm -rf vendor
+
 # Install Laravel dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
