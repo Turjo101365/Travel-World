@@ -4,11 +4,20 @@ $frontendOrigins = array_filter(
     array_map('trim', explode(',', (string) env('FRONTEND_URLS', '')))
 );
 
+$frontendOriginPatterns = array_filter(
+    array_map('trim', explode(',', (string) env('FRONTEND_URL_PATTERNS', '')))
+);
+
 $defaultOrigins = [
     env('FRONTEND_URL', 'http://localhost:5173'),
     'http://127.0.0.1:5173',
     'http://localhost:4173',
     'http://127.0.0.1:4173',
+];
+
+$defaultOriginPatterns = [
+    '^https?://([a-z0-9-]+\.)?vercel\.app$',
+    '^https?://([a-z0-9-]+\.)?onrender\.com$',
 ];
 
 return [
@@ -38,7 +47,13 @@ return [
         )
     ),
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => array_values(
+        array_unique(
+            array_filter(
+                array_merge($defaultOriginPatterns, $frontendOriginPatterns)
+            )
+        )
+    ),
 
     'allowed_headers' => ['*', 'Authorization'],
 
