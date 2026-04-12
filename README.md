@@ -71,6 +71,7 @@ https://www.figma.com/design/xkR6GmohzjaGd7t03VspWV/TravelWorld---Travel-Plannin
   - Add environment variable `VITE_BACKEND_ENDPOINT=https://<YOUR-RENDER-APP>.onrender.com`.
 - Backend: deploy the `server` folder on Render.
   - Use `render.yaml` at the repository root.
+  - Set `phpVersion: 8.4` so Render uses a compatible PHP runtime.
   - Build command: `composer install --no-interaction --prefer-dist --optimize-autoloader`.
   - Start command: `php artisan serve --host=0.0.0.0 --port=$PORT`.
   - Add environment variables `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://<YOUR-RENDER-APP>.onrender.com`, and `FRONTEND_URL=https://<YOUR-VERCEL-APP>.vercel.app`.

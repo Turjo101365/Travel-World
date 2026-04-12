@@ -2,6 +2,7 @@ services:
   - type: web_service
     name: travel-world-backend
     env: php
+    phpVersion: 8.4
     region: oregon
     plan: free
     branch: main
