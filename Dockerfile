@@ -1,22 +1,38 @@
 # Use an official PHP image with Apache
 FROM php:8.4-apache
 
-# ENV Arguments 
-ARG APP_NAME
-ARG APP_ENV
-ARG APP_KEY
-ARG APP_DEBUG
-ARG APP_URL
-ARG FRONTEND_URL
-ARG LOG_LEVEL
-ARG DB_CONNECTION
-ARG DB_HOST
-ARG DB_PORT
-ARG DB_DATABASE
-ARG DB_USERNAME
-ARG DB_PASSWORD
+# Build-time environment arguments with production-friendly defaults
+ARG APP_NAME=Travel-World
+ARG APP_ENV=production
+ARG APP_KEY=base64:TXoGZW2StiHRh+8lzWOfim3iU28WT+Vjov4c3G/gk+Y=
+ARG APP_DEBUG=false
+ARG APP_URL=https://travel-world-o473.onrender.com
+ARG FRONTEND_URL=https://travel-world-xeys.vercel.app
+ARG LOG_LEVEL=error
+ARG DB_CONNECTION=mysql
+ARG DB_HOST=127.0.0.1
+ARG DB_PORT=3307
+ARG DB_DATABASE=TravelDB
+ARG DB_USERNAME=root
+ARG DB_PASSWORD=root123
 
-ARG VITE_BACKEND_ENDPOINT
+ARG VITE_BACKEND_ENDPOINT=https://travel-world-o473.onrender.com
+
+# Expose build-time env values as runtime environment variables
+ENV APP_NAME=${APP_NAME}
+ENV APP_ENV=${APP_ENV}
+ENV APP_KEY=${APP_KEY}
+ENV APP_DEBUG=${APP_DEBUG}
+ENV APP_URL=${APP_URL}
+ENV FRONTEND_URL=${FRONTEND_URL}
+ENV LOG_LEVEL=${LOG_LEVEL}
+ENV DB_CONNECTION=${DB_CONNECTION}
+ENV DB_HOST=${DB_HOST}
+ENV DB_PORT=${DB_PORT}
+ENV DB_DATABASE=${DB_DATABASE}
+ENV DB_USERNAME=${DB_USERNAME}
+ENV DB_PASSWORD=${DB_PASSWORD}
+ENV VITE_BACKEND_ENDPOINT=${VITE_BACKEND_ENDPOINT}
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -69,20 +85,21 @@ RUN composer clear-cache
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
 # Set environment variables for server
-RUN touch .env
-RUN echo "APP_NAME=${APP_NAME}" >> .env && \
-    echo "APP_ENV=${APP_ENV}" >> .env && \
-    echo "APP_KEY=${APP_KEY}" >> .env && \
-    echo "APP_DEBUG=${APP_DEBUG}" >> .env && \
-    echo "APP_URL=${APP_URL}" >> .env && \
-    echo "FRONTEND_URL=${FRONTEND_URL}" >> .env && \
-    echo "LOG_LEVEL=${LOG_LEVEL}" >> .env && \
-    echo "DB_CONNECTION=${DB_CONNECTION}" >> .env && \
-    echo "DB_HOST=${DB_HOST}" >> .env && \
-    echo "DB_DATABASE=${DB_DATABASE}" >> .env && \
-    echo "DB_USERNAME=${DB_USERNAME}" >> .env && \
-    echo "DB_PASSWORD=${DB_PASSWORD}" >> .env && \
-    echo "DB_PORT=${DB_PORT}" >> .env
+RUN cat > .env <<'EOF'
+APP_NAME=${APP_NAME}
+APP_ENV=${APP_ENV}
+APP_KEY=${APP_KEY}
+APP_DEBUG=${APP_DEBUG}
+APP_URL=${APP_URL}
+FRONTEND_URL=${FRONTEND_URL}
+LOG_LEVEL=${LOG_LEVEL}
+DB_CONNECTION=${DB_CONNECTION}
+DB_HOST=${DB_HOST}
+DB_DATABASE=${DB_DATABASE}
+DB_USERNAME=${DB_USERNAME}
+DB_PASSWORD=${DB_PASSWORD}
+DB_PORT=${DB_PORT}
+EOF
 
 # Set permissions for Laravel storage and cache
 RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
@@ -98,6 +115,4 @@ RUN cp -r client/dist/* public/
 # # Expose port 80 for Apache
 EXPOSE 80
 
-# FROM php:8.2-apache
-# # Start Apache server
-# CMD ["apache2-foreground"]
+CMD ["apache2-foreground"]
