@@ -84,23 +84,6 @@ RUN composer clear-cache
 # Install Laravel dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Set environment variables for server
-RUN cat > .env <<'EOF'
-APP_NAME=${APP_NAME}
-APP_ENV=${APP_ENV}
-APP_KEY=${APP_KEY}
-APP_DEBUG=${APP_DEBUG}
-APP_URL=${APP_URL}
-FRONTEND_URL=${FRONTEND_URL}
-LOG_LEVEL=${LOG_LEVEL}
-DB_CONNECTION=${DB_CONNECTION}
-DB_HOST=${DB_HOST}
-DB_DATABASE=${DB_DATABASE}
-DB_USERNAME=${DB_USERNAME}
-DB_PASSWORD=${DB_PASSWORD}
-DB_PORT=${DB_PORT}
-EOF
-
 # Set permissions for Laravel storage and cache
 RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
